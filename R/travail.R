@@ -1,5 +1,6 @@
 library(pacman)
-p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr, tidyr, data.table, Hmisc)
+p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr, 
+       stringdist, tidyr, data.table, Hmisc)
 
 ##########################···
 #### Contenu du script ####···
@@ -37,7 +38,9 @@ lire.csv <- function(path) {
 ### Boucle pour importer les fichiers de collaborations de toutes les équipes et 
 listCollab <- lire.csv(pathCollab)
 
-head(listCollab[[1]]) #Vérifier que le premier df de données collab a le bon nombre de colonnes. Oui
+# Vérifier que le premier fichier collab a le bon nombre de colonnes.
+head(listCollab[[1]]) # oui !
+
 for (i in 1: length(listCollab)) {
   if(ncol(listCollab[[i]])!=ncol(listCollab[[1]])) { # Déterminer si les df de données collab suivants ont le bon nbr de colonnes
     print(i) #Imprimer le numéro des df ne respectant pas le bon nbr de colonnes
@@ -59,11 +62,11 @@ for (i in 1:length(listCollab)) {
 } # Tous les df affichent les mêmes noms de colonnes
 
 ### Réunir tous les df de données de collaborations dans un seul df
-collaborations <- as.data.frame(rbindlist(listCollab, use.names=TRUE))
+coll_tous <- as.data.frame(rbindlist(listCollab, use.names=TRUE))
 
 ### Vérifier les duplicats
-sum(duplicated(collaborations)) #Il y a 1996 duplicats
-collaborations <- unique(collaborations) # Retirer les duplicats des données
+sum(duplicated(coll_tous)) #Il y a 1996 duplicats
+coll_corr <- unique(coll_tous) # Retirer les duplicats des données
 
 ### ETUDIANTS #################################################################
 
@@ -74,67 +77,68 @@ colEtudiant <- c("prenom_nom","prenom","nom","region_administrative",
                  "regime_coop","formation_prealable","annee_debut","programme")
 
 # Corriger les noms de colonne aberrants (contenant un '.')
-listEtudiant %<>% # ceci est un assignment pipe, voir https://magrittr.tidyverse.org/reference/compound.html
+listEtudiant %<>% 
   lapply(function(x) setNames(x, sub("\\.","",names(x)))) %>% 
   # et retirer les colonnes vides ou inutiles
   lapply(function(x) x[(names(x) %in% colEtudiant)])
 
-etudiants_all <- rbindlist(listEtudiant) # colliger la liste en un seul df
-etudiants_all[etudiants_all==""] <- NA # assigner NA aux cellules vides
-etudiants_all %<>% drop_na(prenom_nom) # enlever les rangées sans identifiant
+# colliger la liste en un seul df
+etu_tous <- rbindlist(listEtudiant) %>%  
+  # prenom_nom devient ID, car cette variable sera utilisée comme identifiant unique
+  mutate(ID=prenom_nom, .keep="unused") 
+etu_tous[etu_tous==""] <- NA # assigner NA aux cellules vides
+etu_tous %<>% drop_na(ID) # enlever les rangées sans identifiant
 
 # Création d'une matrice de dissimilarité pour comparer tous les noms ensemble
 # et identifier les plus similaires grâce à la distance Damerau Levenshtein
 # pour trouver les fautes de frappe
 
-etudiant_u <- etudiants_all$prenom_nom %>% unique # liste unique de tous les étudiants
+etudiant_u <- etu_tous$ID %>% unique # liste unique de tous les étudiants
 dist <- etudiant_u %>% stringdistmatrix(.,.,method = "dl") # matrice de distance
 
 # Extraire la liste des noms 
 prob <- etudiant_u[which(dist<5 & dist > 0, arr.ind=TRUE)[,1]] %>% sort %>% as.matrix
 
 # Correction à la main youpiii!
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[1:4]] <- "amelie_harbeck-bastien"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[7:8]] <- "ariane_barrette"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[11:12]] <- "cassandra_godin"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[13:14]] <- "edouard_nadon-beaumier"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[15:16]] <- "francis_boily"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[19:20]] <- "ihuoma_elsie_ebere"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[21:22]] <- "jonathan_rondeau-leclaire"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[23:24]] <- "juliette_meilleur"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[25:26]] <- "kayla_trempe-kay"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[19:20]] <- "louis-philippe_theriault"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[31:32]] <- "mael_guerin"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[33:34]] <- "marie_bughin"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[35:36]] <- "marie-christine_arseneau"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[37:38]] <- "mia_carriere"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[39:40]] <- "penelope_robert"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[41:42]] <- "philippe_barrette"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[43:44]] <- "philippe_bourassa"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[45:46]] <- "sabrina_leclercq"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[47:48]] <- "samuel_fortin"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[49:50]] <- "sara-jade_lamontagne"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom %in% prob[51:56]] <- "yanick_sageau"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom == "roxanne_bernier\t\t\t\t\t\t\t"] <- "roxanne_bernier"
-etudiants_all$prenom_nom[etudiants_all$prenom_nom == "eve\xa0_dandonneau"] <- "eve_dandonneau"
+etu_tous$ID[etu_tous$ID %in% prob[1:4]] <- "amelie_harbeck-bastien"
+etu_tous$ID[etu_tous$ID %in% prob[7:8]] <- "ariane_barrette"
+etu_tous$ID[etu_tous$ID %in% prob[11:12]] <- "cassandra_godin"
+etu_tous$ID[etu_tous$ID %in% prob[13:14]] <- "edouard_nadon-beaumier"
+etu_tous$ID[etu_tous$ID %in% prob[15:16]] <- "francis_boily"
+etu_tous$ID[etu_tous$ID %in% prob[19:20]] <- "ihuoma_elsie_ebere"
+etu_tous$ID[etu_tous$ID %in% prob[21:22]] <- "jonathan_rondeau-leclaire"
+etu_tous$ID[etu_tous$ID %in% prob[23:24]] <- "juliette_meilleur"
+etu_tous$ID[etu_tous$ID %in% prob[25:26]] <- "kayla_trempe-kay"
+etu_tous$ID[etu_tous$ID %in% prob[19:20]] <- "louis-philippe_theriault"
+etu_tous$ID[etu_tous$ID %in% prob[31:32]] <- "mael_guerin"
+etu_tous$ID[etu_tous$ID %in% prob[33:34]] <- "marie_bughin"
+etu_tous$ID[etu_tous$ID %in% prob[35:36]] <- "marie-christine_arseneau"
+etu_tous$ID[etu_tous$ID %in% prob[37:38]] <- "mia_carriere"
+etu_tous$ID[etu_tous$ID %in% prob[39:40]] <- "penelope_robert"
+etu_tous$ID[etu_tous$ID %in% prob[41:42]] <- "philippe_barrette"
+etu_tous$ID[etu_tous$ID %in% prob[43:44]] <- "philippe_bourassa"
+etu_tous$ID[etu_tous$ID %in% prob[45:46]] <- "sabrina_leclercq"
+etu_tous$ID[etu_tous$ID %in% prob[47:48]] <- "samuel_fortin"
+etu_tous$ID[etu_tous$ID %in% prob[49:50]] <- "sara-jade_lamontagne"
+etu_tous$ID[etu_tous$ID %in% prob[51:56]] <- "yanick_sageau"
+etu_tous$ID[etu_tous$ID == "roxanne_bernier\t\t\t\t\t\t\t"] <- "roxanne_bernier"
+etu_tous$ID[etu_tous$ID == "eve\xa0_dandonneau"] <- "eve_dandonneau"
 
 ### On décide d'enlever les colonnes nom et prénom car elles sont loin d'être
 ### essentielles et contiennent potentiellement aussi des erreurs.
-
-etudiants_all %<>% select(-c(nom, prenom)) 
-
-etudiants <- etudiants_all %>% 
+etu_tous %<>% select(-c(nom, prenom))%>% 
   mutate(countNA = rowSums(is.na(.))) %>% # somme des données NA par rangée
-  group_by(prenom_nom) %>% # groupement pour la prochaine étape
+  group_by(ID) %>% # groupement pour la prochaine étape
   filter(countNA == min(countNA)) %>% # garder les rangées avec le plus de données
-  distinct(prenom_nom, # retirer les entrées dupliquées; 
+  distinct(ID, # retirer les entrées dupliquées; 
            .keep_all=TRUE) %>% # les ambiguités sont sélectionnées arbitrairement
   # Traduire tous les booléens en anglais:
   mutate(regime_coop = case_when( 
     regime_coop =="VRAI" ~ "TRUE",
     regime_coop == "FAUX" ~ "FALSE"))
 
-etudiants$region_administrative %>% unique # Certaines régions administratives sont mal écrites. 
+etu_tous$region_administrative %>% unique 
+  # Certaines régions administratives sont mal écrites!
 
 # Régions administratives du Québec:
 regAd <- c("monteregie", "saguenay-lac-saint-jean", "mauricie", "lanaudiere",
@@ -144,23 +148,23 @@ regAd <- c("monteregie", "saguenay-lac-saint-jean", "mauricie", "lanaudiere",
            "chaudiere_appalaches", "capitale-nationale")
 
 # Boucle permettant de remplacer des erreurs de frappe mineurs grâce au fuzzy match
-etu_corr <- etudiants
+etu_corr <- etu_tous
 for (i in regAd) {
-  toReplace <- agrep(i,etudiants$region_administrative) # liste d'indices avec match fuzzy
+  toReplace <- agrep(i,etu_tous$region_administrative) # liste d'indices avec match fuzzy
   etu_corr[toReplace,"region_administrative"] <- i # remplacer avec la bonne valeur
 }
 
 # Vérifier la valeur originale des données corrigées
-etudiants[which(etudiants$region_administrative != etu_corr$region_administrative),
+etu_tous[which(etu_tous$region_administrative != 
+                      etu_corr$region_administrative),
            "region_administrative"] # c'était bel et bien une erreur!
-
-etudiants <- etu_corr
 
 ### COURS #####################################################################
 
 listCours <- lire.csv(pathCours)
 
-head(listCours[[1]]) #Vérifier que le premier df de données cours a le bon nombre de colonnes. Oui
+#Vérifier que le premier df de données cours a le bon nombre de colonnes.
+head(listCours[[1]])  # Oui
 for (i in 1: length(listCours)) {
   if(ncol(listCours[[i]])!=ncol(listCours[[1]])) { # Déterminer si les df de données collab suivants ont le bon nbr de colonnes
     print(i) #Imprimer le numéro des df ne respectant pas le bon nbr de colonnes
@@ -203,11 +207,11 @@ cours <- cours[!cours$sigle %in% c("",NA),]
 # cours officielle du bac en Biologie de l'UdeS
 cours$sigle[order(cours$sigle)] #les cours TSB302 et BIO400 n'existent pas 
 
-### Corriger les sigle erronés à la fois pour le df cours et le df collaborations
+### Corriger les sigle erronés à la fois pour cours et coll_corr
 cours$sigle[cours$sigle == "TSB302"] <- "TSB303" # Modifier TSB302 en TSB303 pour df cours
-collaborations$sigle[collaborations$sigle == "TSB302"] <- "TSB303" # Modifier TSB302 en TSB303 pour df collaborations
+coll_corr$sigle[coll_corr$sigle == "TSB302"] <- "TSB303" # Modifier TSB302 en TSB303 pour df coll_corr
 cours$sigle[cours$sigle == "BIO400"] <- "BOT400" # Modifier BIO400 en BOT400 pour df cours
-collaborations$sigle[collaborations$sigle == "BIO400"] <- "BOT400" # Modifier BIO400 en BOT400 pour df collaborations
+coll_corr$sigle[coll_corr$sigle == "BIO400"] <- "BOT400" # Modifier BIO400 en BOT400 pour df coll_corr
 
 ### Trouver les sigles dupliqués avec des crédits différents
 nrow(unique(cours))-length(unique(cours$sigle)) #Calculer le nbr d'erreurs de crédits dans les données
@@ -222,72 +226,64 @@ cours$credits[cours$sigle == "BOT400"] <- 1
 ### Valider que les sigles dupliqués avec des crédits différents ont été corrigés
 nrow(unique(cours))-length(unique(cours$sigle))
 
-
 ##########################################···
 #### Cohérence des variables partagées ####···
 ##########################################···
 
 ### Cohérence collaboration - cours ############################################
 
-# Trouver les sigles présents dans cours, mais pas dans collaborations:
+# Trouver les sigles présents dans cours, mais pas dans coll_corr:
 (orphelins <- unique(cours$sigle)[unique(cours$sigle) %nin% 
-                         unique(collaborations$sigle)])
-  # Il y a 10 cours présents dans cours qui n'ont pas donné lieu a des collaborations
+                         unique(coll_corr$sigle)])
+  # Il y a 10 cours présents dans cours qui n'ont pas donné lieu a des coll_corr
 
-# Retirer les cours présents dans cours mais pas dans collaborations
-# car ces cours ne présentaient pas de collaborations:
+# Retirer les cours présents dans cours mais pas dans coll_corr
+# car ces cours ne présentaient pas de coll_corr:
 cours <- cours[cours$sigle %nin% orphelins,] 
 
-# Trouver les sigles présents dans collaborations absents de cours
-unique(collaborations$sigle)[unique(collaborations$sigle) %nin% unique(cours$sigle)]
-  # 4 erreurs sont présentes dans les sigles de collaborations
+# Trouver les sigles présents dans coll_corr absents de cours
+unique(coll_corr$sigle)[unique(coll_corr$sigle) %nin% unique(cours$sigle)]
+  # 4 erreurs sont présentes dans les sigles de coll_corr
 
-# Retirer les collaborations relatives à GBI105... il n'y avait pas de collaborations dans ce cours:
-collaborations <- collaborations[!collaborations$sigle == "GBI105",]
-# Retirer les collaborations sans sigle:
-collaborations <- collaborations[!collaborations$sigle == "",] 
+# Retirer les coll_corr relatives à GBI105... il n'y avait pas de coll_corr dans ce cours:
+coll_corr <- coll_corr[!coll_corr$sigle == "GBI105",]
+# Retirer les coll_corr sans sigle:
+coll_corr <- coll_corr[!coll_corr$sigle == "",] 
 # Modifier le sigle GAE500 par GAE550:
-collaborations$sigle[collaborations$sigle == "GAE500"] <- "GAE550" 
+coll_corr$sigle[coll_corr$sigle == "GAE500"] <- "GAE550" 
 # Modifier le sigle ECL405 pour ECL404
-collaborations$sigle[collaborations$sigle == "ECL405"] <- "ECL404" 
+coll_corr$sigle[coll_corr$sigle == "ECL405"] <- "ECL404" 
 
 ### Cohérence collaboration - étudiants ########################################
 
-enleve <- setdiff(etudiants$prenom_nom, collaborations$etudiant1 %>% unique)
-# un des étudiants n'est jamais mentionné dans les collaborations, on le 
-# retire donc de la table etudiants :
-etudiants %<>% filter(prenom_nom %nin% enleve)
+# Vérifier la différence entre les identifiants étudiants:
+setdiff(etu_corr$ID, coll_corr$etudiant1 %>% unique)
 
-# Vérifier la différence entre (etudiant1 ou etudiant2) et prenom_nom
-setdiff(collaborations$etudiant1 %>% unique, etudiants$prenom_nom)
-setdiff(collaborations$etudiant2 %>% unique, etudiants$prenom_nom)
-# Il y a 38 noms qui sont soit des erreurs de frappe, soit carrément absents 
-# de la table etudiants.
-
-# On corrige quelques erreurs à la mitaine, où la présence d'un backslash
-# nous donne du fil à retordre:
-coll_corr <- collaborations
-coll_corr$etudiant1[coll_corr$etudiant1=="juliette_meilleur\xa0"] <- "juliette_meilleur"
-coll_corr$etudiant2[coll_corr$etudiant2=="juliette_meilleur\xa0"] <- "juliette_meilleur"
-coll_corr$etudiant1[coll_corr$etudiant1=="mia_carriere\xa0"] <- "mia_carriere"  
-coll_corr$etudiant2[coll_corr$etudiant2=="mia_carriere\xa0"] <- "mia_carriere"  
-coll_corr$etudiant1[coll_corr$etudiant1=="eve\xa0_dandonneau"] <- "eve_dandonneau"  
-coll_corr$etudiant2[coll_corr$etudiant2=="eve\xa0_dandonneau"] <- "eve_dandonneau"  
+# Vérifier la différence entre (etudiant1 ou etudiant2) et ID
+setdiff(coll_corr$etudiant1 %>% unique, etu_corr$ID)
+setdiff(coll_corr$etudiant2 %>% unique, etu_corr$ID)
+# Plusieurs étudiants ont des erreurs de frappe!
 
 # On remplace les autres erreurs avec un fuzzy match :
-id <- etudiants$prenom_nom
+id <- etu_corr$ID
 for (i in id) {
-  toReplace <- agrepl(i,coll_corr$etudiant1) # liste d'indices avec match fuzzy
-  coll_corr[toReplace,"etudiant_1"] <- i # remplacer avec la bonne valeur
-}
+  toReplace <- agrepl(i, # ID à fuzzy-matcher
+                      coll_corr$etudiant1, # liste à chercher
+                      ignore.case = FALSE,
+                      max.distance = 0.001) # très sensible pour éviter de mélanger les noms similaires
+  coll_corr[toReplace,"etudiant1"] <- i # remplacer avec le bon ID
+  }
 for (i in id) {
-  toReplace <- agrepl(i,coll_corr$etudiant2)
-  coll_corr[toReplace,"etudiant_2"] <- i 
+  toReplace <- agrepl(i,coll_corr$etudiant2, ignore.case = FALSE, max.distance = 0.001)
+  coll_corr[toReplace,"etudiant2"] <- i 
   }
 
-# ultimate sanity check
-setdiff(setdiff(coll_corr$etudiant1 %>% unique, etudiants$prenom_nom),
-        setdiff(coll_corr$etudiant2 %>% unique, etudiants$prenom_nom))
+# Ajouter les étudiants présents dans collaboration mais absents de etudiant
+# à la table etudiant
+setdiff(coll_corr$etudiant1 %>% unique, id)
+setdiff(coll_corr$etudiant2 %>% unique, id)
+
+
 
 
 #######################################···
@@ -317,7 +313,7 @@ cours_table <- read_tsv('db/cours.txt') %>% distinct %>%
 dbSendQuery(con, 
 "CREATE TABLE etudiants (
   etudiant_ID VARCHAR(4) NOT NULL,
-  prenom_nom	VARCHAR(30) NOT NULL,
+  ID	VARCHAR(30) NOT NULL,
   prenom	VARCHAR(15),
   nom	 VARCHAR(15), 
   region_administrative	VARCHAR(30),

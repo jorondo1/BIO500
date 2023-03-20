@@ -10,11 +10,14 @@ p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr,
 #     Collaborations
 #     Etudiants
 #     Cours
+# 2. Cohérence entre les variables partagées
+#     Cohérence collaborations - cours
+#     Cohérence collaborations - étudiants
 
 
-###############################################···
-#### 1. Nettoyage et assemblage des données ####···
-###############################################···
+################################################################################
+#### 1. Nettoyage et assemblage des données ####################################
+###############################################################################
 
 # Liste des données
 pathCours <- Sys.glob("donnees_BIO500/*cours*csv")
@@ -33,21 +36,24 @@ lire.csv <- function(path) {
   return(myList)
 }
 
-### COLLABORATIONS ############################################################
+#####################···
+### COLLABORATIONS ###···
+#####################···
 
-### Boucle pour importer les fichiers de collaborations de toutes les équipes et 
+### Importer les fichiers de collaborations de toutes les équipes
 listCollab <- lire.csv(pathCollab)
 
-# Vérifier que le premier fichier collab a le bon nombre de colonnes.
+# Vérifier que le premier fichier collab a le bon nombre de colonnes
 head(listCollab[[1]]) # oui !
 
+# Déterminer si les df de données collab suivants ont le bon nbr de colonnes
 for (i in 1: length(listCollab)) {
-  if(ncol(listCollab[[i]])!=ncol(listCollab[[1]])) { # Déterminer si les df de données collab suivants ont le bon nbr de colonnes
+  if(ncol(listCollab[[i]])!=ncol(listCollab[[1]])) { 
     print(i) #Imprimer le numéro des df ne respectant pas le bon nbr de colonnes
   }
 }
 
-# le 7e df n'a pas le bon nombre, donc on l'arrange
+# le 7e df n'a pas le bon nombre, on l'arrange :
 listCollab[[7]] # Il semble avoir 5 colonnes vides supplémentaires dans le 7e df 
 unique(listCollab[[7]][,5:9]) # Ça confirme que ces colonnes supplémentaires ne contiennent aucune données. 
 listCollab[[7]] <- listCollab[[7]][,1:4] # Retirer ces colonnes contenant aucune information
@@ -66,9 +72,11 @@ coll_tous <- as.data.frame(rbindlist(listCollab, use.names=TRUE))
 
 ### Vérifier les duplicats
 sum(duplicated(coll_tous)) #Il y a 1996 duplicats
-coll_corr <- unique(coll_tous) # Retirer les duplicats des données
+coll_corr <- coll_tous %>% unique #Retirer les duplicats des données
 
-### ETUDIANTS #################################################################
+#####################···
+### ETUDIANTS ########···
+#####################···
 
 listEtudiant <- lire.csv(pathEtudiant)
 
@@ -109,7 +117,7 @@ etu_tous$ID[etu_tous$ID %in% prob[19:20]] <- "ihuoma_elsie_ebere"
 etu_tous$ID[etu_tous$ID %in% prob[21:22]] <- "jonathan_rondeau-leclaire"
 etu_tous$ID[etu_tous$ID %in% prob[23:24]] <- "juliette_meilleur"
 etu_tous$ID[etu_tous$ID %in% prob[25:26]] <- "kayla_trempe-kay"
-etu_tous$ID[etu_tous$ID %in% prob[19:20]] <- "louis-philippe_theriault"
+etu_tous$ID[etu_tous$ID %in% prob[27:30]] <- "louis-philippe_theriault"
 etu_tous$ID[etu_tous$ID %in% prob[31:32]] <- "mael_guerin"
 etu_tous$ID[etu_tous$ID %in% prob[33:34]] <- "marie_bughin"
 etu_tous$ID[etu_tous$ID %in% prob[35:36]] <- "marie-christine_arseneau"
@@ -159,7 +167,9 @@ etu_tous[which(etu_tous$region_administrative !=
                       etu_corr$region_administrative),
            "region_administrative"] # c'était bel et bien une erreur!
 
-### COURS #####################################################################
+#####################···
+### COURS ############···
+#####################···
 
 listCours <- lire.csv(pathCours)
 
@@ -226,11 +236,13 @@ cours$credits[cours$sigle == "BOT400"] <- 1
 ### Valider que les sigles dupliqués avec des crédits différents ont été corrigés
 nrow(unique(cours))-length(unique(cours$sigle))
 
-##########################################···
-#### Cohérence des variables partagées ####···
-##########################################···
+################################################################################
+#### 02. Cohérence des variables partagées #####################################
+################################################################################
 
-### Cohérence collaboration - cours ############################################
+#########################################···
+### Cohérence collaboration - cours ######···
+#########################################···
 
 # Trouver les sigles présents dans cours, mais pas dans coll_corr:
 (orphelins <- unique(cours$sigle)[unique(cours$sigle) %nin% 
@@ -254,7 +266,9 @@ coll_corr$sigle[coll_corr$sigle == "GAE500"] <- "GAE550"
 # Modifier le sigle ECL405 pour ECL404
 coll_corr$sigle[coll_corr$sigle == "ECL405"] <- "ECL404" 
 
-### Cohérence collaboration - étudiants ########################################
+###########################################···
+### Cohérence collaboration - étudiants ####···
+###########################################···
 
 # Vérifier la différence entre les identifiants étudiants:
 setdiff(etu_corr$ID, coll_corr$etudiant1 %>% unique)
@@ -270,25 +284,43 @@ for (i in id) {
   toReplace <- agrepl(i, # ID à fuzzy-matcher
                       coll_corr$etudiant1, # liste à chercher
                       ignore.case = FALSE,
-                      max.distance = 0.001) # très sensible pour éviter de mélanger les noms similaires
+                      max.distance = 0.0001) # très sensible pour éviter de mélanger les noms similaires
   coll_corr[toReplace,"etudiant1"] <- i # remplacer avec le bon ID
-  }
+}
+# Une autre fois pour la colonne etudiant2
 for (i in id) {
-  toReplace <- agrepl(i,coll_corr$etudiant2, ignore.case = FALSE, max.distance = 0.001)
+  toReplace <- agrepl(i,coll_corr$etudiant2, ignore.case = FALSE, max.distance = 0.0001)
   coll_corr[toReplace,"etudiant2"] <- i 
   }
 
 # Ajouter les étudiants présents dans collaboration mais absents de etudiant
 # à la table etudiant
-setdiff(coll_corr$etudiant1 %>% unique, id)
-setdiff(coll_corr$etudiant2 %>% unique, id)
+setdiff(coll_corr$etudiant1, id)
+setdiff(coll_corr$etudiant2, id)
+setdiff(id, coll_corr$etudiant1)
+setdiff(id, coll_corr$etudiant2)
 
+# Il reste un cas problématique qu'on règle à la main:
+coll_corr$etudiant1[coll_corr$etudiant1 == "eve\xa0_dandonneau"] <- "eve_dandonneau"
+coll_corr$etudiant2[coll_corr$etudiant2 == "eve\xa0_dandonneau"] <- "eve_dandonneau"
 
+# Les autres cas sont absents de etu_corr, on les ajoute:
+manquants <- data.frame(ID=setdiff(coll_corr$etudiant1 %>% unique, id))
 
+etudiants <- rbind(etu_corr, manquants)
 
-#######################################···
-#### Création et injection de la bd ####···
-#######################################···
+# Sanity check ultime :
+setdiff(coll_corr$etudiant1,etudiants$ID)
+setdiff(coll_corr$etudiant2,etudiants$ID)
+setdiff(etudiants$ID,coll_corr$etudiant1)
+setdiff(etudiants$ID,coll_corr$etudiant2)
+
+# renommer la table finale de collaborations
+collaborations <- coll_corr
+
+################################################################################
+#### 03.Création et injection de la bd #########################################
+################################################################################
 
 dbPath <- "db/travail_final.db"
 # Création de la db

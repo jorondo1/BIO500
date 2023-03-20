@@ -6,17 +6,17 @@ p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr,
 #### Contenu du script ####···
 ##########################···
 
-# 1. Nettoyage et assemblage des données
-#     Collaborations
-#     Etudiants
-#     Cours
-# 2. Cohérence entre les variables partagées
-#     Cohérence collaborations - cours
-#     Cohérence collaborations - étudiants
-
+# 01.Nettoyage et assemblage des données
+#       Collaborations
+#       Etudiants
+#       Cours
+# 02.Cohérence entre les variables partagées
+#       Cohérence collaborations - cours
+#       Cohérence collaborations - étudiants
+# 03.Création et injection de la bd
 
 ################################################################################
-#### 1. Nettoyage et assemblage des données ####################################
+#### 01.Nettoyage et assemblage des données ####################################
 ###############################################################################
 
 # Liste des données
@@ -107,7 +107,7 @@ dist <- etudiant_u %>% stringdistmatrix(.,.,method = "dl") # matrice de distance
 # Extraire la liste des noms 
 prob <- etudiant_u[which(dist<5 & dist > 0, arr.ind=TRUE)[,1]] %>% sort %>% as.matrix
 
-# Correction à la main youpiii!
+# Correction à la main, youpiii!
 etu_tous$ID[etu_tous$ID %in% prob[1:4]] <- "amelie_harbeck-bastien"
 etu_tous$ID[etu_tous$ID %in% prob[7:8]] <- "ariane_barrette"
 etu_tous$ID[etu_tous$ID %in% prob[11:12]] <- "cassandra_godin"
@@ -237,7 +237,7 @@ cours$credits[cours$sigle == "BOT400"] <- 1
 nrow(unique(cours))-length(unique(cours$sigle))
 
 ################################################################################
-#### 02. Cohérence des variables partagées #####################################
+#### 02.Cohérence des variables partagées ######################################
 ################################################################################
 
 #########################################···

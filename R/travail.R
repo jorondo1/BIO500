@@ -42,13 +42,14 @@ lire.csv <- function(path) {
 
 ### Importer les fichiers de collaborations de toutes les équipes
 listCollab <- lire.csv(pathCollab)
+# Colonnes d'intérêt : 
 colCollab <- c("etudiant1","etudiant2","sigle","session")
 
-# Retirer les caractères weird
-listCollab %<>% lapply(function(df) {
+### Retirer les caractères weird, car il y a de beaux espaces insécables <a0>
+listCollab %<>% lapply(function(df) { # s'applique à chaque élément de la liste
   # conserver seulement les colonnes d'intérêt
   df <- df[, colCollab]
-  # remove "<a0>" from all columns
+  # retirer "<a0>" par colonne
   df[] <- lapply(df, function(col) gsub("<a0>", "", col))
   return(df)
 })
@@ -57,8 +58,8 @@ listCollab %<>% lapply(function(df) {
 coll_tous <- as.data.frame(rbindlist(listCollab, use.names=TRUE))
 
 ### Vérifier les duplicats
-sum(duplicated(coll_tous)) #Il y a 1996 duplicats
-coll_corr <- coll_tous %>% unique #Retirer les duplicats des données
+sum(duplicated(coll_tous)) # Il y a 2010 duplicats
+coll_corr <- coll_tous %>% unique # Retirer les duplicats des données
 
 #####################···
 ### ETUDIANTS ########···
@@ -66,10 +67,11 @@ coll_corr <- coll_tous %>% unique #Retirer les duplicats des données
 
 listEtudiant <- lire.csv(pathEtudiant)
 
-# Liste des variables recherchées
+# Colonnes d'intérêt
 colEtudiant <- c("prenom_nom","prenom","nom","region_administrative",
                  "regime_coop","formation_prealable","annee_debut","programme")
 
+### Retirer les caractères weird
 listEtudiant %<>% lapply(function(df) {
   # retirer les points des noms de colonnes
   names(df) <- sub("\\.", "", names(df))
@@ -272,6 +274,7 @@ setdiff(id, coll_corr$etudiant2)
 # Les autres cas sont absents de etu_corr, on les ajoute:
 manquants <- data.frame(ID=setdiff(coll_corr$etudiant1 %>% unique, id))
 
+# on rassemble le tout dans un seul df
 etudiants <- rbind(etu_corr, manquants)
 
 # Sanity check ultime :

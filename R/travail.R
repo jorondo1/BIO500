@@ -84,11 +84,15 @@ listEtudiant <- lire.csv(pathEtudiant)
 colEtudiant <- c("prenom_nom","prenom","nom","region_administrative",
                  "regime_coop","formation_prealable","annee_debut","programme")
 
-# Corriger les noms de colonne aberrants (contenant un '.')
-listEtudiant %<>% 
-  lapply(function(x) setNames(x, sub("\\.","",names(x)))) %>% 
-  # et retirer les colonnes vides ou inutiles
-  lapply(function(x) x[(names(x) %in% colEtudiant)])
+listEtudiant %<>% lapply(function(df) {
+  # retirer les points des noms de colonnes
+  names(df) <- sub("\\.", "", names(df))
+  # conserver seulement les colonnes d'intérêt
+  df <- df[, colEtudiant]
+  # remove "<a0>" from all columns
+  df[] <- lapply(df, function(col) gsub("<a0>", "", col))
+  return(df)
+})
 
 # colliger la liste en un seul df
 etu_tous <- rbindlist(listEtudiant) %>%  
@@ -98,39 +102,39 @@ etu_tous[etu_tous==""] <- NA # assigner NA aux cellules vides
 etu_tous %<>% drop_na(ID) # enlever les rangées sans identifiant
 
 # Création d'une matrice de dissimilarité pour comparer tous les noms ensemble
-# et identifier les plus similaires grâce à la distance Damerau Levenshtein
-# pour trouver les fautes de frappe
+# et identifier les plus similaires grâce à la distance Damerau-Levenshtein
+# pour trouver les fautes de frappe.
 
 etudiant_u <- etu_tous$ID %>% unique # liste unique de tous les étudiants
 dist <- etudiant_u %>% stringdistmatrix(.,.,method = "dl") # matrice de distance
 
 # Extraire la liste des noms 
-prob <- etudiant_u[which(dist<5 & dist > 0, arr.ind=TRUE)[,1]] %>% sort %>% as.matrix
+(prob <- etudiant_u[which(dist<5 & dist > 0, arr.ind=TRUE)[,1]] %>% sort %>% as.matrix)
+# Attention, certains noms sont simplement similaires et 
+# n'ont pas besoin d'être remplacés!
 
 # Correction à la main, youpiii!
-etu_tous$ID[etu_tous$ID %in% prob[1:4]] <- "amelie_harbeck-bastien"
+etu_tous$ID[etu_tous$ID %in% prob[1:6]] <- "amelie_harbeck-bastien"
 etu_tous$ID[etu_tous$ID %in% prob[7:8]] <- "ariane_barrette"
 etu_tous$ID[etu_tous$ID %in% prob[11:12]] <- "cassandra_godin"
 etu_tous$ID[etu_tous$ID %in% prob[13:14]] <- "edouard_nadon-beaumier"
 etu_tous$ID[etu_tous$ID %in% prob[15:16]] <- "francis_boily"
 etu_tous$ID[etu_tous$ID %in% prob[19:20]] <- "ihuoma_elsie_ebere"
 etu_tous$ID[etu_tous$ID %in% prob[21:22]] <- "jonathan_rondeau-leclaire"
-etu_tous$ID[etu_tous$ID %in% prob[23:24]] <- "juliette_meilleur"
-etu_tous$ID[etu_tous$ID %in% prob[25:26]] <- "kayla_trempe-kay"
-etu_tous$ID[etu_tous$ID %in% prob[27:30]] <- "louis-philippe_theriault"
-etu_tous$ID[etu_tous$ID %in% prob[31:32]] <- "mael_guerin"
-etu_tous$ID[etu_tous$ID %in% prob[33:34]] <- "marie_bughin"
-etu_tous$ID[etu_tous$ID %in% prob[35:36]] <- "marie-christine_arseneau"
-etu_tous$ID[etu_tous$ID %in% prob[37:38]] <- "mia_carriere"
-etu_tous$ID[etu_tous$ID %in% prob[39:40]] <- "penelope_robert"
-etu_tous$ID[etu_tous$ID %in% prob[41:42]] <- "philippe_barrette"
-etu_tous$ID[etu_tous$ID %in% prob[43:44]] <- "philippe_bourassa"
-etu_tous$ID[etu_tous$ID %in% prob[45:46]] <- "sabrina_leclercq"
-etu_tous$ID[etu_tous$ID %in% prob[47:48]] <- "samuel_fortin"
-etu_tous$ID[etu_tous$ID %in% prob[49:50]] <- "sara-jade_lamontagne"
-etu_tous$ID[etu_tous$ID %in% prob[51:56]] <- "yanick_sageau"
+etu_tous$ID[etu_tous$ID %in% prob[23:24]] <- "kayla_trempe-kay"
+etu_tous$ID[etu_tous$ID %in% prob[25:26]] <- "laurianne_plante"
+etu_tous$ID[etu_tous$ID %in% prob[27:28]] <- "louis-philippe_theriault"
+etu_tous$ID[etu_tous$ID %in% prob[29:30]] <- "mael_guerin"
+etu_tous$ID[etu_tous$ID %in% prob[31:32]] <- "marie_bughin"
+etu_tous$ID[etu_tous$ID %in% prob[33:34]] <- "marie-christine_arseneau"
+etu_tous$ID[etu_tous$ID %in% prob[35:36]] <- "penelope_robert"
+etu_tous$ID[etu_tous$ID %in% prob[37:38]] <- "philippe_barrette"
+etu_tous$ID[etu_tous$ID %in% prob[39:40]] <- "philippe_bourassa"
+etu_tous$ID[etu_tous$ID %in% prob[41:42]] <- "sabrina_leclercq"
+etu_tous$ID[etu_tous$ID %in% prob[43:44]] <- "samuel_fortin"
+etu_tous$ID[etu_tous$ID %in% prob[45:46]] <- "sara-jade_lamontagne"
+etu_tous$ID[etu_tous$ID %in% prob[47:52]] <- "yanick_sageau"
 etu_tous$ID[etu_tous$ID == "roxanne_bernier\t\t\t\t\t\t\t"] <- "roxanne_bernier"
-etu_tous$ID[etu_tous$ID == "eve\xa0_dandonneau"] <- "eve_dandonneau"
 
 ### On décide d'enlever les colonnes nom et prénom car elles sont loin d'être
 ### essentielles et contiennent potentiellement aussi des erreurs.
@@ -146,7 +150,7 @@ etu_tous %<>% select(-c(nom, prenom))%>%
     regime_coop == "FAUX" ~ "FALSE"))
 
 etu_tous$region_administrative %>% unique 
-  # Certaines régions administratives sont mal écrites!
+# Certaines régions administratives sont mal écrites!
 
 # Régions administratives du Québec:
 regAd <- c("monteregie", "saguenay-lac-saint-jean", "mauricie", "lanaudiere",
@@ -164,8 +168,8 @@ for (i in regAd) {
 
 # Vérifier la valeur originale des données corrigées
 etu_tous[which(etu_tous$region_administrative != 
-                      etu_corr$region_administrative),
-           "region_administrative"] # c'était bel et bien une erreur!
+                 etu_corr$region_administrative),
+         "region_administrative"] # c'était bel et bien une erreur!
 
 #####################···
 ### COURS ############···
@@ -246,8 +250,8 @@ nrow(unique(cours))-length(unique(cours$sigle))
 
 # Trouver les sigles présents dans cours, mais pas dans coll_corr:
 (orphelins <- unique(cours$sigle)[unique(cours$sigle) %nin% 
-                         unique(coll_corr$sigle)])
-  # Il y a 10 cours présents dans cours qui n'ont pas donné lieu a des coll_corr
+                                    unique(coll_corr$sigle)])
+# Il y a 10 cours présents dans cours qui n'ont pas donné lieu a des coll_corr
 
 # Retirer les cours présents dans cours mais pas dans coll_corr
 # car ces cours ne présentaient pas de coll_corr:
@@ -255,7 +259,7 @@ cours <- cours[cours$sigle %nin% orphelins,]
 
 # Trouver les sigles présents dans coll_corr absents de cours
 unique(coll_corr$sigle)[unique(coll_corr$sigle) %nin% unique(cours$sigle)]
-  # 4 erreurs sont présentes dans les sigles de coll_corr
+# 4 erreurs sont présentes dans les sigles de coll_corr
 
 # Retirer les coll_corr relatives à GBI105... il n'y avait pas de coll_corr dans ce cours:
 coll_corr <- coll_corr[!coll_corr$sigle == "GBI105",]
@@ -291,7 +295,7 @@ for (i in id) {
 for (i in id) {
   toReplace <- agrepl(i,coll_corr$etudiant2, ignore.case = FALSE, max.distance = 0.0001)
   coll_corr[toReplace,"etudiant2"] <- i 
-  }
+}
 
 # Ajouter les étudiants présents dans collaboration mais absents de etudiant
 # à la table etudiant
@@ -327,7 +331,7 @@ dbPath <- "db/travail_final.db"
 if(file.exists(dbPath)) {
   file.remove(dbPath)
   con <- dbConnect(SQLite(), dbname=dbPath)
-  }
+}
 
 # Création des tables brutes et suppression des dupliqués
 collab_table <- read_tsv('db/collaborations.txt') %>% distinct %>% 
@@ -343,7 +347,7 @@ cours_table <- read_tsv('db/cours.txt') %>% distinct %>%
   mutate(across(where(is.character),str_squish))
 
 dbSendQuery(con, 
-"CREATE TABLE etudiants (
+            "CREATE TABLE etudiants (
   etudiant_ID VARCHAR(4) NOT NULL,
   ID	VARCHAR(30) NOT NULL,
   prenom	VARCHAR(15),
@@ -357,7 +361,7 @@ dbSendQuery(con,
 );")
 
 dbSendQuery(con, 
-"CREATE TABLE collab (
+            "CREATE TABLE collab (
   etudiant_1 VARCHAR(30) NOT NULL,
   etudiant_2 VARCHAR(30) NOT NULL,
   session VARCHAR(3),
@@ -369,7 +373,7 @@ dbSendQuery(con,
 );")
 
 dbSendQuery(con, 
-"CREATE TABLE cours (
+            "CREATE TABLE cours (
   sigle VARCHAR(6) NOT NULL,
   optionnel BOOLEAN,
   credits INT(2),

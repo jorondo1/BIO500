@@ -94,8 +94,11 @@ listEtudiant %<>%
 etu_tous <- rbindlist(listEtudiant) %>%  
   # prenom_nom devient ID, car cette variable sera utilisée comme identifiant unique
   mutate(ID=prenom_nom, .keep="unused") 
-etu_tous[etu_tous==""] <- NA # assigner NA aux cellules vides
-etu_tous %<>% drop_na(ID) # enlever les rangées sans identifiant
+
+# assigner NA aux cellules vides:
+etu_tous[etu_tous==""] <- NA
+# enlever les rangées sans identifiant:
+etu_tous %<>% drop_na(ID) 
 
 # Création d'une matrice de dissimilarité pour comparer tous les noms ensemble
 # et identifier les plus similaires grâce à la distance Damerau Levenshtein
@@ -185,6 +188,7 @@ for (i in 1: length(listCours)) {
 head(listCours[[5]]) # Il semble y avoir une 4e colonne vide supplémentaire dans le df 
 unique(listCours[[5]][,4]) # Ça confirme que cette colonne supplémentaire ne contient aucune donnée. 
 listCours[[5]] <- listCours[[5]][,1:3] # Retirer cette colonne contenant aucune information
+
 # Régler le nbr de colonnes du 7e df cours
 head(listCours[[7]]) # Il semble y avoir 6 colonnes vides supplémentaires dans le df 
 unique(listCours[[7]][,4:9]) # Ça confirme que ces colonnes supplémentaires ne contiennent aucune donnée. 

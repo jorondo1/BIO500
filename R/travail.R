@@ -42,15 +42,14 @@ lire.csv <- function(path) {
 
 ### Importer les fichiers de collaborations de toutes les équipes
 listCollab <- lire.csv(pathCollab)
+# Colonnes d'intérêt : 
 colCollab <- c("etudiant1","etudiant2","sigle","session")
 
-# Retirer les caractères weird
-listCollab %<>% lapply(function(df) {
-  # retirer les points des noms de colonnes
-  #names(df) <- sub("\\.", "", names(df))
+### Retirer les caractères weird, car il y a de beaux espaces insécables <a0>
+listCollab %<>% lapply(function(df) { # s'applique à chaque élément de la liste
   # conserver seulement les colonnes d'intérêt
   df <- df[, colCollab]
-  # remove "<a0>" from all columns
+  # retirer "<a0>" par colonne
   df[] <- lapply(df, function(col) gsub("<a0>", "", col))
   return(df)
 })
@@ -59,8 +58,8 @@ listCollab %<>% lapply(function(df) {
 coll_tous <- as.data.frame(rbindlist(listCollab, use.names=TRUE))
 
 ### Vérifier les duplicats
-sum(duplicated(coll_tous)) #Il y a 1996 duplicats
-coll_corr <- coll_tous %>% unique #Retirer les duplicats des données
+sum(duplicated(coll_tous)) # Il y a 2010 duplicats
+coll_corr <- coll_tous %>% unique # Retirer les duplicats des données
 
 #####################···
 ### ETUDIANTS ########···
@@ -68,10 +67,11 @@ coll_corr <- coll_tous %>% unique #Retirer les duplicats des données
 
 listEtudiant <- lire.csv(pathEtudiant)
 
-# Liste des variables recherchées
+# Colonnes d'intérêt
 colEtudiant <- c("prenom_nom","prenom","nom","region_administrative",
                  "regime_coop","formation_prealable","annee_debut","programme")
 
+### Retirer les caractères weird
 listEtudiant %<>% lapply(function(df) {
   # retirer les points des noms de colonnes
   names(df) <- sub("\\.", "", names(df))
@@ -104,27 +104,26 @@ dist <- etudiant_u %>% stringdistmatrix(.,.,method = "dl") # matrice de distance
 # Attention, certains noms sont simplement similaires et 
 # n'ont pas besoin d'être remplacés!
 
-# Correction à la main, youpiii!
-etu_tous$ID[etu_tous$ID %in% prob[1:6]] <- "amelie_harbeck-bastien"
-etu_tous$ID[etu_tous$ID %in% prob[7:8]] <- "ariane_barrette"
-etu_tous$ID[etu_tous$ID %in% prob[11:12]] <- "cassandra_godin"
-etu_tous$ID[etu_tous$ID %in% prob[13:14]] <- "edouard_nadon-beaumier"
-etu_tous$ID[etu_tous$ID %in% prob[15:16]] <- "francis_boily"
-etu_tous$ID[etu_tous$ID %in% prob[19:20]] <- "ihuoma_elsie_ebere"
-etu_tous$ID[etu_tous$ID %in% prob[21:22]] <- "jonathan_rondeau-leclaire"
-etu_tous$ID[etu_tous$ID %in% prob[23:24]] <- "kayla_trempe-kay"
-etu_tous$ID[etu_tous$ID %in% prob[25:26]] <- "laurianne_plante"
-etu_tous$ID[etu_tous$ID %in% prob[27:28]] <- "louis-philippe_theriault"
-etu_tous$ID[etu_tous$ID %in% prob[29:30]] <- "mael_guerin"
-etu_tous$ID[etu_tous$ID %in% prob[31:32]] <- "marie_bughin"
-etu_tous$ID[etu_tous$ID %in% prob[33:34]] <- "marie-christine_arseneau"
-etu_tous$ID[etu_tous$ID %in% prob[35:36]] <- "penelope_robert"
-etu_tous$ID[etu_tous$ID %in% prob[37:38]] <- "philippe_barrette"
-etu_tous$ID[etu_tous$ID %in% prob[39:40]] <- "philippe_bourassa"
-etu_tous$ID[etu_tous$ID %in% prob[41:42]] <- "sabrina_leclercq"
-etu_tous$ID[etu_tous$ID %in% prob[43:44]] <- "samuel_fortin"
-etu_tous$ID[etu_tous$ID %in% prob[45:46]] <- "sara-jade_lamontagne"
-etu_tous$ID[etu_tous$ID %in% prob[47:52]] <- "yanick_sageau"
+# On crée une liste des noms mal épelés
+prob_unique <- c(
+  "amelie_harbeck-bastien", "ariane_barrette","cassandra_godin", "edouard_nadon-beaumier",
+  "francis_boily", "ihuoma_elsie_ebere", "jonathan_rondeau-leclaire", "kayla_trempe-kay",
+  "juliette_meilleur", "laurianne_plante", "louis-philippe_theriault", "mael_guerin",
+  "marie_bughin", "marie-christine_arseneau", "penelope_robert", "mia_carriere",
+  "philippe_barrette", "philippe_bourassa","sabrina_leclercq", "samuel_fortin",
+  "sara-jade_lamontagne", "yanick_sageau" )
+
+# substitution fuzzy
+# cette loop imprime aussi les détails de la substitution pour s'assurer
+# que deux noms réellement similaires ne sont pas remplacés par le même nom
+for (i in prob_unique) {
+  toReplace <- agrep(i,etu_tous$ID, ignore.case = FALSE,
+                     max.distance = 2) # liste d'indices avec match fuzzy
+  print(c(etu_tous[toReplace,"ID"],i))
+  etu_tous[toReplace,"ID"] <- i # remplacer avec la bonne valeur
+}
+
+# # Correction à la main d'un cas particulier
 etu_tous$ID[etu_tous$ID == "roxanne_bernier\t\t\t\t\t\t\t"] <- "roxanne_bernier"
 
 ### On décide d'enlever les colonnes nom et prénom car elles sont loin d'être
@@ -138,7 +137,7 @@ etu_tous %<>% select(-c(nom, prenom))%>%
   # Traduire tous les booléens en anglais:
   mutate(regime_coop = case_when( 
     regime_coop =="VRAI" ~ "TRUE",
-    regime_coop == "FAUX" ~ "FALSE"))
+    regime_coop == "FAUX" ~ "FALSE")) %>% dplyr::select(-countNA)
 
 etu_tous$region_administrative %>% unique 
 # Certaines régions administratives sont mal écrites!
@@ -275,6 +274,7 @@ setdiff(id, coll_corr$etudiant2)
 # Les autres cas sont absents de etu_corr, on les ajoute:
 manquants <- data.frame(ID=setdiff(coll_corr$etudiant1 %>% unique, id))
 
+# on rassemble le tout dans un seul df
 etudiants <- rbind(etu_corr, manquants)
 
 # Sanity check ultime :
@@ -285,8 +285,8 @@ setdiff(etudiants$ID,coll_corr$etudiant2)
 
 # 100% des ID sont cohérents!
 
-# renommer la table finale de collaborations
-collaborations <- coll_corr
+# renommer la table finale de collaborations et filtrer les duplicats
+collaborations <- unique(coll_corr)
 
 ################################################################################
 #### 03.Création et injection de la bd #########################################
@@ -299,57 +299,40 @@ if(file.exists(dbPath)) {
   con <- dbConnect(SQLite(), dbname=dbPath)
 }
 
-# Création des tables brutes et suppression des dupliqués
-collab_table <- read_tsv('db/collaborations.txt') %>% distinct %>% 
-  # retirer les espaces début/fin de string
-  mutate(across(where(is.character), str_squish))
-
-etudiant_table <- read_tsv('db/etudiants.txt') %>% distinct %>% 
-  mutate(across(where(is.character), str_squish)) %>% 
-  # création d'un etudiant_ID de format E000
-  mutate(etudiant_ID = paste0("E", str_pad(row_number(),3,"left","0")))
-
-cours_table <- read_tsv('db/cours.txt') %>% distinct %>% 
-  mutate(across(where(is.character),str_squish))
-
 dbSendQuery(con, 
             "CREATE TABLE etudiants (
-  etudiant_ID VARCHAR(4) NOT NULL,
-  ID	VARCHAR(30) NOT NULL,
-  prenom	VARCHAR(15),
-  nom	 VARCHAR(15), 
+  ID	VARCHAR(50) NOT NULL,
   region_administrative	VARCHAR(30),
   regime_coop BOOLEAN,
   formation_prealable VARCHAR(20),
   annee_debut VARCHAR(5), 
   programme VARCHAR(8),
-  PRIMARY KEY (etudiant_ID)
+  PRIMARY KEY (ID)
 );")
 
 dbSendQuery(con, 
-            "CREATE TABLE collab (
-  etudiant_1 VARCHAR(30) NOT NULL,
-  etudiant_2 VARCHAR(30) NOT NULL,
-  session VARCHAR(3),
+            "CREATE TABLE collaborations (
+  etudiant1 VARCHAR(50) NOT NULL,
+  etudiant2 VARCHAR(50) NOT NULL,
+  session VARCHAR(5),
   sigle VARCHAR(6) NOT NULL,
-  PRIMARY KEY (etudiant_1, etudiant_2, sigle),
-  FOREIGN KEY (etudiant_1) REFERENCES etudiants(etudiant_ID),
-  FOREIGN KEY (etudiant_2) REFERENCES etudiants(etudiant_ID),
+  PRIMARY KEY (etudiant1, etudiant2, sigle),
+  FOREIGN KEY (etudiant1) REFERENCES etudiants(ID),
+  FOREIGN KEY (etudiant2) REFERENCES etudiants(ID),
   FOREIGN KEY (sigle) REFERENCES cours(sigle)
 );")
 
 dbSendQuery(con, 
             "CREATE TABLE cours (
   sigle VARCHAR(6) NOT NULL,
-  optionnel BOOLEAN,
-  credits INT(2),
+  credits INT,
   PRIMARY KEY (sigle)
 );")
 
 ### INJECT DATABASE
-dbWriteTable(con, append = TRUE, name = "collab", value = collab_table)
-dbWriteTable(con, append = TRUE, name = "etudiants", value = etudiant_table)
-dbWriteTable(con, append = TRUE, name = "cours", value = cours_table)
+dbWriteTable(con, append = TRUE, name = "collaborations", value = collaborations)
+dbWriteTable(con, append = TRUE, name = "etudiants", value = etudiants)
+dbWriteTable(con, append = TRUE, name = "cours", value = cours)
 
 # Nombre de liens par étudiant?
 # Décmopte de liens par paire d'étudiants

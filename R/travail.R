@@ -135,7 +135,7 @@ etu_tous %<>% select(-c(nom, prenom))%>%
   # Traduire tous les booléens en anglais:
   mutate(regime_coop = case_when( 
     regime_coop =="VRAI" ~ "TRUE",
-    regime_coop == "FAUX" ~ "FALSE"))
+    regime_coop == "FAUX" ~ "FALSE")) %>% dplyr::select(-countNA)
 
 etu_tous$region_administrative %>% unique 
 # Certaines régions administratives sont mal écrites!
@@ -282,8 +282,8 @@ setdiff(etudiants$ID,coll_corr$etudiant2)
 
 # 100% des ID sont cohérents!
 
-# renommer la table finale de collaborations
-collaborations <- coll_corr
+# renommer la table finale de collaborations et filtrer les duplicats
+collaborations <- unique(coll_corr)
 
 ################################################################################
 #### 03.Création et injection de la bd #########################################
@@ -296,57 +296,40 @@ if(file.exists(dbPath)) {
   con <- dbConnect(SQLite(), dbname=dbPath)
 }
 
-# Création des tables brutes et suppression des dupliqués
-collab_table <- read_tsv('db/collaborations.txt') %>% distinct %>% 
-  # retirer les espaces début/fin de string
-  mutate(across(where(is.character), str_squish))
-
-etudiant_table <- read_tsv('db/etudiants.txt') %>% distinct %>% 
-  mutate(across(where(is.character), str_squish)) %>% 
-  # création d'un etudiant_ID de format E000
-  mutate(etudiant_ID = paste0("E", str_pad(row_number(),3,"left","0")))
-
-cours_table <- read_tsv('db/cours.txt') %>% distinct %>% 
-  mutate(across(where(is.character),str_squish))
-
 dbSendQuery(con, 
             "CREATE TABLE etudiants (
-  etudiant_ID VARCHAR(4) NOT NULL,
-  ID	VARCHAR(30) NOT NULL,
-  prenom	VARCHAR(15),
-  nom	 VARCHAR(15), 
+  ID	VARCHAR(50) NOT NULL,
   region_administrative	VARCHAR(30),
   regime_coop BOOLEAN,
   formation_prealable VARCHAR(20),
   annee_debut VARCHAR(5), 
   programme VARCHAR(8),
-  PRIMARY KEY (etudiant_ID)
+  PRIMARY KEY (ID)
 );")
 
 dbSendQuery(con, 
-            "CREATE TABLE collab (
-  etudiant_1 VARCHAR(30) NOT NULL,
-  etudiant_2 VARCHAR(30) NOT NULL,
-  session VARCHAR(3),
+            "CREATE TABLE collaborations (
+  etudiant1 VARCHAR(50) NOT NULL,
+  etudiant2 VARCHAR(50) NOT NULL,
+  session VARCHAR(5),
   sigle VARCHAR(6) NOT NULL,
-  PRIMARY KEY (etudiant_1, etudiant_2, sigle),
-  FOREIGN KEY (etudiant_1) REFERENCES etudiants(etudiant_ID),
-  FOREIGN KEY (etudiant_2) REFERENCES etudiants(etudiant_ID),
+  PRIMARY KEY (etudiant1, etudiant2, sigle),
+  FOREIGN KEY (etudiant1) REFERENCES etudiants(ID),
+  FOREIGN KEY (etudiant2) REFERENCES etudiants(ID),
   FOREIGN KEY (sigle) REFERENCES cours(sigle)
 );")
 
 dbSendQuery(con, 
             "CREATE TABLE cours (
   sigle VARCHAR(6) NOT NULL,
-  optionnel BOOLEAN,
-  credits INT(2),
+  credits INT,
   PRIMARY KEY (sigle)
 );")
 
 ### INJECT DATABASE
-dbWriteTable(con, append = TRUE, name = "collab", value = collab_table)
-dbWriteTable(con, append = TRUE, name = "etudiants", value = etudiant_table)
-dbWriteTable(con, append = TRUE, name = "cours", value = cours_table)
+dbWriteTable(con, append = TRUE, name = "collaborations", value = collaborations)
+dbWriteTable(con, append = TRUE, name = "etudiants", value = etudiants)
+dbWriteTable(con, append = TRUE, name = "cours", value = cours)
 
 # Nombre de liens par étudiant?
 # Décmopte de liens par paire d'étudiants

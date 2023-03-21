@@ -110,10 +110,14 @@ dist <- etudiant_u %>% stringdistmatrix(.,.,method = "dl") # matrice de distance
 # n'ont pas besoin d'être remplacés!
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # On crée une liste des noms mal épelés
 =======
 
 >>>>>>> 5354466 (fix name replacement)
+=======
+# On crée une liste des noms mal épelés
+>>>>>>> 7c7e011 (fix substitution fuzzy des noms dans liste etudiants)
 prob_unique <- c(
   "amelie_harbeck-bastien", "ariane_barrette","cassandra_godin", "edouard_nadon-beaumier",
   "francis_boily", "ihuoma_elsie_ebere", "jonathan_rondeau-leclaire", "kayla_trempe-kay",
@@ -122,6 +126,7 @@ prob_unique <- c(
   "philippe_barrette", "philippe_bourassa","sabrina_leclercq", "samuel_fortin",
   "sara-jade_lamontagne", "yanick_sageau" )
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 # substitution fuzzy
 # cette loop imprime aussi les détails de la substitution pour s'assurer
@@ -135,11 +140,19 @@ for (i in prob_unique) {
 
 # # Correction à la main d'un cas particulier
 =======
+=======
+# substitution fuzzy
+# cette loop imprime aussi les détails de la substitution pour s'assurer
+# que deux noms réellement similaires ne sont pas remplacés par le même nom
+>>>>>>> 7c7e011 (fix substitution fuzzy des noms dans liste etudiants)
 for (i in prob_unique) {
-  toReplace <- agrep(i,etu_tous$ID) # liste d'indices avec match fuzzy
+  toReplace <- agrep(i,etu_tous$ID, ignore.case = FALSE,
+                     max.distance = 2) # liste d'indices avec match fuzzy
+  print(c(etu_tous[toReplace,"ID"],i))
   etu_tous[toReplace,"ID"] <- i # remplacer avec la bonne valeur
 }
 
+<<<<<<< HEAD
 # # Correction à la main, youpiii!
 # etu_tous$ID[etu_tous$ID %in% prob[1:6]] <- "amelie_harbeck-bastien"
 # etu_tous$ID[etu_tous$ID %in% prob[7:8]] <- "ariane_barrette"
@@ -162,6 +175,9 @@ for (i in prob_unique) {
 # etu_tous$ID[etu_tous$ID %in% prob[45:46]] <- "sara-jade_lamontagne"
 # etu_tous$ID[etu_tous$ID %in% prob[47:52]] <- "yanick_sageau"
 >>>>>>> 5354466 (fix name replacement)
+=======
+# # Correction à la main d'un cas particulier
+>>>>>>> 7c7e011 (fix substitution fuzzy des noms dans liste etudiants)
 etu_tous$ID[etu_tous$ID == "roxanne_bernier\t\t\t\t\t\t\t"] <- "roxanne_bernier"
 
 ### On décide d'enlever les colonnes nom et prénom car elles sont loin d'être

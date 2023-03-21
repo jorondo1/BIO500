@@ -319,6 +319,8 @@ setdiff(coll_corr$etudiant2,etudiants$ID)
 setdiff(etudiants$ID,coll_corr$etudiant1)
 setdiff(etudiants$ID,coll_corr$etudiant2)
 
+# 100% des ID sont cohérents!
+
 # renommer la table finale de collaborations
 collaborations <- coll_corr
 

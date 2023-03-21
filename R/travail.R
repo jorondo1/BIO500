@@ -45,8 +45,13 @@ listCollab <- lire.csv(pathCollab)
 # Colonnes d'intérêt : 
 colCollab <- c("etudiant1","etudiant2","sigle","session")
 
+<<<<<<< HEAD
 ### Retirer les caractères weird, car il y a de beaux espaces insécables <a0>
 listCollab %<>% lapply(function(df) { # s'applique à chaque élément de la liste
+=======
+# Retirer les caractères weird
+listCollab %<>% lapply(function(df) {
+>>>>>>> 5354466 (fix name replacement)
   # conserver seulement les colonnes d'intérêt
   df <- df[, colCollab]
   # retirer "<a0>" par colonne
@@ -104,7 +109,11 @@ dist <- etudiant_u %>% stringdistmatrix(.,.,method = "dl") # matrice de distance
 # Attention, certains noms sont simplement similaires et 
 # n'ont pas besoin d'être remplacés!
 
+<<<<<<< HEAD
 # On crée une liste des noms mal épelés
+=======
+
+>>>>>>> 5354466 (fix name replacement)
 prob_unique <- c(
   "amelie_harbeck-bastien", "ariane_barrette","cassandra_godin", "edouard_nadon-beaumier",
   "francis_boily", "ihuoma_elsie_ebere", "jonathan_rondeau-leclaire", "kayla_trempe-kay",
@@ -113,6 +122,7 @@ prob_unique <- c(
   "philippe_barrette", "philippe_bourassa","sabrina_leclercq", "samuel_fortin",
   "sara-jade_lamontagne", "yanick_sageau" )
 
+<<<<<<< HEAD
 # substitution fuzzy
 # cette loop imprime aussi les détails de la substitution pour s'assurer
 # que deux noms réellement similaires ne sont pas remplacés par le même nom
@@ -124,6 +134,34 @@ for (i in prob_unique) {
 }
 
 # # Correction à la main d'un cas particulier
+=======
+for (i in prob_unique) {
+  toReplace <- agrep(i,etu_tous$ID) # liste d'indices avec match fuzzy
+  etu_tous[toReplace,"ID"] <- i # remplacer avec la bonne valeur
+}
+
+# # Correction à la main, youpiii!
+# etu_tous$ID[etu_tous$ID %in% prob[1:6]] <- "amelie_harbeck-bastien"
+# etu_tous$ID[etu_tous$ID %in% prob[7:8]] <- "ariane_barrette"
+# etu_tous$ID[etu_tous$ID %in% prob[11:12]] <- "cassandra_godin"
+# etu_tous$ID[etu_tous$ID %in% prob[13:14]] <- "edouard_nadon-beaumier"
+# etu_tous$ID[etu_tous$ID %in% prob[15:16]] <- "francis_boily"
+# etu_tous$ID[etu_tous$ID %in% prob[19:20]] <- "ihuoma_elsie_ebere"
+# etu_tous$ID[etu_tous$ID %in% prob[21:22]] <- "jonathan_rondeau-leclaire"
+# etu_tous$ID[etu_tous$ID %in% prob[23:24]] <- "kayla_trempe-kay"
+# etu_tous$ID[etu_tous$ID %in% prob[25:26]] <- "laurianne_plante"
+# etu_tous$ID[etu_tous$ID %in% prob[27:28]] <- "louis-philippe_theriault"
+# etu_tous$ID[etu_tous$ID %in% prob[29:30]] <- "mael_guerin"
+# etu_tous$ID[etu_tous$ID %in% prob[31:32]] <- "marie_bughin"
+# etu_tous$ID[etu_tous$ID %in% prob[33:34]] <- "marie-christine_arseneau"
+# etu_tous$ID[etu_tous$ID %in% prob[35:36]] <- "penelope_robert"
+# etu_tous$ID[etu_tous$ID %in% prob[37:38]] <- "philippe_barrette"
+# etu_tous$ID[etu_tous$ID %in% prob[39:40]] <- "philippe_bourassa"
+# etu_tous$ID[etu_tous$ID %in% prob[41:42]] <- "sabrina_leclercq"
+# etu_tous$ID[etu_tous$ID %in% prob[43:44]] <- "samuel_fortin"
+# etu_tous$ID[etu_tous$ID %in% prob[45:46]] <- "sara-jade_lamontagne"
+# etu_tous$ID[etu_tous$ID %in% prob[47:52]] <- "yanick_sageau"
+>>>>>>> 5354466 (fix name replacement)
 etu_tous$ID[etu_tous$ID == "roxanne_bernier\t\t\t\t\t\t\t"] <- "roxanne_bernier"
 
 ### On décide d'enlever les colonnes nom et prénom car elles sont loin d'être

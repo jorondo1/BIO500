@@ -55,31 +55,6 @@ listCollab %<>% lapply(function(df) {
   return(df)
 })
 
-
-# # Vérifier que le premier fichier collab a le bon nombre de colonnes
-# head(listCollab[[1]]) # oui !
-# 
-# # Déterminer si les df de données collab suivants ont le bon nbr de colonnes
-# for (i in 1: length(listCollab)) {
-#   if(ncol(listCollab[[i]])!=ncol(listCollab[[1]])) { 
-#     print(i) #Imprimer le numéro des df ne respectant pas le bon nbr de colonnes
-#   }
-# }
-# 
-# # le 7e df n'a pas le bon nombre, on l'arrange :
-# listCollab[[7]] # Il semble avoir 5 colonnes vides supplémentaires dans le 7e df 
-# unique(listCollab[[7]][,5:9]) # Ça confirme que ces colonnes supplémentaires ne contiennent aucune données. 
-# listCollab[[7]] <- listCollab[[7]][,1:4] # Retirer ces colonnes contenant aucune information
-# 
-# colnames(listCollab[[1]]) # Vérifier que le premier df de données collab a les bons noms de colonnes
-# for (i in 1:length(listCollab)) {
-#   if (sum (
-#     listCollab[[i]] %>%
-#     colnames == colnames(listCollab[[1]]))!=4) {
-#     print(i)
-#   }
-# } # Tous les df affichent les mêmes noms de colonnes
-
 ### Réunir tous les df de données de collaborations dans un seul df
 coll_tous <- as.data.frame(rbindlist(listCollab, use.names=TRUE))
 

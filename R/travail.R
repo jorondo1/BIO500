@@ -46,12 +46,17 @@ listCollab <- lire.csv(pathCollab)
 colCollab <- c("etudiant1","etudiant2","sigle","session")
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ### Retirer les caractères weird, car il y a de beaux espaces insécables <a0>
 listCollab %<>% lapply(function(df) { # s'applique à chaque élément de la liste
 =======
 # Retirer les caractères weird
 listCollab %<>% lapply(function(df) {
 >>>>>>> 5354466 (fix name replacement)
+=======
+### Retirer les caractères weird, car il y a de beaux espaces insécables <a0>
+listCollab %<>% lapply(function(df) { # s'applique à chaque élément de la liste
+>>>>>>> 037493e (commentaires)
   # conserver seulement les colonnes d'intérêt
   df <- df[, colCollab]
   # retirer "<a0>" par colonne

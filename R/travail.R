@@ -42,30 +42,18 @@ lire.csv <- function(path) {
 
 ### Importer les fichiers de collaborations de toutes les équipes
 listCollab <- lire.csv(pathCollab)
+colCollab <- c("etudiant1","etudiant2","sigle","session")
 
-# Vérifier que le premier fichier collab a le bon nombre de colonnes
-head(listCollab[[1]]) # oui !
-
-# Déterminer si les df de données collab suivants ont le bon nbr de colonnes
-for (i in 1: length(listCollab)) {
-  if(ncol(listCollab[[i]])!=ncol(listCollab[[1]])) { 
-    print(i) #Imprimer le numéro des df ne respectant pas le bon nbr de colonnes
-  }
-}
-
-# le 7e df n'a pas le bon nombre, on l'arrange :
-listCollab[[7]] # Il semble avoir 5 colonnes vides supplémentaires dans le 7e df 
-unique(listCollab[[7]][,5:9]) # Ça confirme que ces colonnes supplémentaires ne contiennent aucune données. 
-listCollab[[7]] <- listCollab[[7]][,1:4] # Retirer ces colonnes contenant aucune information
-
-colnames(listCollab[[1]]) # Vérifier que le premier df de données collab a les bons noms de colonnes
-for (i in 1:length(listCollab)) {
-  if (sum (
-    listCollab[[i]] %>%
-    colnames == colnames(listCollab[[1]]))!=4) {
-    print(i)
-  }
-} # Tous les df affichent les mêmes noms de colonnes
+# Retirer les caractères weird
+listCollab %<>% lapply(function(df) {
+  # retirer les points des noms de colonnes
+  #names(df) <- sub("\\.", "", names(df))
+  # conserver seulement les colonnes d'intérêt
+  df <- df[, colCollab]
+  # remove "<a0>" from all columns
+  df[] <- lapply(df, function(col) gsub("<a0>", "", col))
+  return(df)
+})
 
 ### Réunir tous les df de données de collaborations dans un seul df
 coll_tous <- as.data.frame(rbindlist(listCollab, use.names=TRUE))
@@ -98,8 +86,11 @@ listEtudiant %<>% lapply(function(df) {
 etu_tous <- rbindlist(listEtudiant) %>%  
   # prenom_nom devient ID, car cette variable sera utilisée comme identifiant unique
   mutate(ID=prenom_nom, .keep="unused") 
-etu_tous[etu_tous==""] <- NA # assigner NA aux cellules vides
-etu_tous %<>% drop_na(ID) # enlever les rangées sans identifiant
+
+# assigner NA aux cellules vides:
+etu_tous[etu_tous==""] <- NA
+# enlever les rangées sans identifiant:
+etu_tous %<>% drop_na(ID) 
 
 # Création d'une matrice de dissimilarité pour comparer tous les noms ensemble
 # et identifier les plus similaires grâce à la distance Damerau-Levenshtein
@@ -177,42 +168,16 @@ etu_tous[which(etu_tous$region_administrative !=
 
 listCours <- lire.csv(pathCours)
 
-#Vérifier que le premier df de données cours a le bon nombre de colonnes.
-head(listCours[[1]])  # Oui
-for (i in 1: length(listCours)) {
-  if(ncol(listCours[[i]])!=ncol(listCours[[1]])) { # Déterminer si les df de données collab suivants ont le bon nbr de colonnes
-    print(i) #Imprimer le numéro des df ne respectant pas le bon nbr de colonnes
-  }
-}
-
-# Régler le nbr de colonnes du 5e df cours
-head(listCours[[5]]) # Il semble y avoir une 4e colonne vide supplémentaire dans le df 
-unique(listCours[[5]][,4]) # Ça confirme que cette colonne supplémentaire ne contient aucune donnée. 
-listCours[[5]] <- listCours[[5]][,1:3] # Retirer cette colonne contenant aucune information
-# Régler le nbr de colonnes du 7e df cours
-head(listCours[[7]]) # Il semble y avoir 6 colonnes vides supplémentaires dans le df 
-unique(listCours[[7]][,4:9]) # Ça confirme que ces colonnes supplémentaires ne contiennent aucune donnée. 
-listCours[[7]] <- listCours[[7]][,1:3] # Retirer ces colonnes contenant aucune information
-
-colnames(listCours[[1]]) # Vérifier que le premier df de données cours a les bons noms de colonnes
-for (i in 1:length(listCours)) {
-  if (sum (
-    listCours[[i]] %>%
-    colnames == colnames(listCours[[1]]))!=3) {
-    print(i)
-  }
-} # Le 4e df cours n'a pas les mêmes noms de colonnes
-
-# Régler le nom des colonnes du 4e df cours
-head(listCours[[4]]) # un i tréma s'est inséré dans le nom de la première colonne
-colnames(listCours[[4]]) <- c("sigle","optionnel","credits") # Appliquer les bons noms de colonnes au 4e df cours
-
-### Joindre tous df cours de toutes les équipes en un un seul df
-cours <- as.data.frame(rbindlist(listCours, use.names=TRUE))
+# Enlever le i trémas que certains voient (mais pas sur mon mac!)
+names(listCours[[4]]) <- c("sigle","optionnel", "credits")
 
 ### Retirer la colonne 'optionnel' car le même cours peut être optionnel pour 
 # certains étudiants et non optionnel pour d'autres, selon leur programme
-cours <- cours[,c("sigle","credits")]
+colCours <- c("sigle", "credits")
+listCours %<>% lapply(function(x) x[(names(x) %in% colCours)])
+
+### Joindre tous df cours de toutes les équipes en un un seul df
+cours <- as.data.frame(rbindlist(listCours, use.names=TRUE))
 
 ### Retirer les rangées du df cours qui ne contiennent pas de données dans la colonne 'sigle'
 cours <- cours[!cours$sigle %in% c("",NA),]
@@ -238,7 +203,7 @@ cours$credits[cours$sigle == "TSB303"] <- 2
 cours$credits[cours$sigle == "BOT400"] <- 1
 
 ### Valider que les sigles dupliqués avec des crédits différents ont été corrigés
-nrow(unique(cours))-length(unique(cours$sigle))
+nrow(unique(cours))-length(unique(cours$sigle)) # 0 = all good!
 
 ################################################################################
 #### 02.Cohérence des variables partagées ######################################
@@ -263,8 +228,11 @@ unique(coll_corr$sigle)[unique(coll_corr$sigle) %nin% unique(cours$sigle)]
 
 # Retirer les coll_corr relatives à GBI105... il n'y avait pas de coll_corr dans ce cours:
 coll_corr <- coll_corr[!coll_corr$sigle == "GBI105",]
-# Retirer les coll_corr sans sigle:
-coll_corr <- coll_corr[!coll_corr$sigle == "",] 
+
+# L'équipe 4 a rapporté une erreur dans 6 de ses entrées, qu'on corrige manuellement
+# parce que ce sont les seules entrées où ces données sont manquantes.
+coll_corr[coll_corr$sigle == "",3:4] <- c("ECL615","E2022")
+
 # Modifier le sigle GAE500 par GAE550:
 coll_corr$sigle[coll_corr$sigle == "GAE500"] <- "GAE550" 
 # Modifier le sigle ECL405 pour ECL404
@@ -304,10 +272,6 @@ setdiff(coll_corr$etudiant2, id)
 setdiff(id, coll_corr$etudiant1)
 setdiff(id, coll_corr$etudiant2)
 
-# Il reste un cas problématique qu'on règle à la main:
-coll_corr$etudiant1[coll_corr$etudiant1 == "eve\xa0_dandonneau"] <- "eve_dandonneau"
-coll_corr$etudiant2[coll_corr$etudiant2 == "eve\xa0_dandonneau"] <- "eve_dandonneau"
-
 # Les autres cas sont absents de etu_corr, on les ajoute:
 manquants <- data.frame(ID=setdiff(coll_corr$etudiant1 %>% unique, id))
 
@@ -318,6 +282,8 @@ setdiff(coll_corr$etudiant1,etudiants$ID)
 setdiff(coll_corr$etudiant2,etudiants$ID)
 setdiff(etudiants$ID,coll_corr$etudiant1)
 setdiff(etudiants$ID,coll_corr$etudiant2)
+
+# 100% des ID sont cohérents!
 
 # renommer la table finale de collaborations
 collaborations <- coll_corr

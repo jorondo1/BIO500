@@ -14,6 +14,7 @@ p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr,
 #       Cohérence collaborations - cours
 #       Cohérence collaborations - étudiants
 # 03.Création et injection de la bd
+# 04.Requêtes SQL
 
 ################################################################################
 #### 01.Nettoyage et assemblage des données ####################################
@@ -360,9 +361,43 @@ dbWriteTable(con, append = TRUE, name = "collaborations", value = collaborations
 dbWriteTable(con, append = TRUE, name = "etudiants", value = etudiants)
 dbWriteTable(con, append = TRUE, name = "cours", value = cours)
 
-# Nombre de liens par étudiant?
-# Décmopte de liens par paire d'étudiants
-# Enregistrer le tout en CSV
-# puis dans R,
-# calculer nombre d'étudiants, nombre de liens, et connectance du réseau
-# calculer le nombre de liens moyens par étudiant et la variance
+################################################################################
+#### 04.Requêtes SQL ###########################################################
+################################################################################
+
+### Créer un fichier csv du nombre de liens par étudiant
+dbGetQuery(con,
+           "SELECT COUNT(etudiant1) AS nbr_liens, etudiant1 AS etudiant
+  FROM collaborations
+  GROUP BY etudiant1
+;") %>% write.csv2(.,"resultats/liens_etudiants.csv",row.names=FALSE)
+
+### Créer un fichier csv du nombre de liens par paire d'étudiants
+dbGetQuery(con,
+           "SELECT etudiant1, etudiant2, COUNT(etudiant1) AS nbr_liens
+           FROM collaborations
+           GROUP BY etudiant1, etudiant2
+;") %>% write.csv2(.,"resultats/liens_paires_etudiants.csv",row.names=FALSE)
+
+### Déterminer le nombre d'étudiants
+nbr_etudiants <- dbGetQuery(con,
+                            "SELECT COUNT(ID) AS Nbr_etudiants
+                            FROM etudiants
+;")
+
+### Déterminer le nombre de liens entre les étudiants
+nbr_liens <- dbGetQuery(con,
+                        "SELECT COUNT(etudiant1) AS nbr_liens
+                        FROM collaborations
+;")
+
+### Déterminer la connectance (nbr liens observés/nbr de liens possibles)
+connectance <- nbr_liens/(nbr_etudiants*(nbr_etudiants-1)/2)
+
+### Déterminer le nombre moyen de liens par étudiant 
+liens_etudiants <-read.csv2("resultats/liens_etudiants.csv")
+nbr_liens_moy <- liens_etudiants$nbr_liens %>% mean
+
+### Déterminer la variance du nbr de liens moyens par étudiant
+sd_liens <- liens_etudiants$nbr_liens %>% sd
+

@@ -81,12 +81,6 @@ coll_tous$session[coll_tous$session %in% "ECL615"] <- NA # Retirer ces données 
 ### Retirer les duplicats des données
 coll_tous <- coll_tous %>% unique 
 
-### Vérifier s'il y a des collaborations qui on été entrées plusieurs fois avec des 'session' différentes
-sum(duplicated(coll_tous[,-4])) # En effet il y a 37 'doublons' de ce type
-coll_tous[apply(coll_tous[,-4],1,paste,collapse="") %in% apply(coll_tous[duplicated(coll_tous[,-4]),-4],1,paste,collapse=""),] <- NA # Retirer les données de 'session' de ces entrées, car ce n'est 
-#pas possible de déterminer quelle session est la bonne
-coll_tous <- coll_tous %>% unique # Retirer ces 'doublons'
-
 #####################···
 ### ETUDIANTS ########···
 #####################···
@@ -259,8 +253,8 @@ coll_tous$sigle[coll_tous$sigle == "GAE500"] <- "GAE550"
 # Modifier le sigle ECL405 pour ECL404
 coll_tous$sigle[coll_tous$sigle == "ECL405"] <- "ECL404" 
 
-# Renommer le df cours_tous
-cours <- cours_tous
+# Renommer le df cours_tous et filtrer les duplicats
+cours <- cours_tous %>% unique
 
 ###########################################···
 ### Cohérence collaboration - étudiants ####···
@@ -310,7 +304,14 @@ setdiff(etudiants$ID,coll_tous$etudiant2)
 
 # 100% des ID sont cohérents!
 
-# renommer la table finale de collaborations et filtrer les duplicats
+### Vérifier s'il y a des collaborations qui on été entrées plusieurs fois avec des 'session' différentes
+#On ne pouvait pas le faire avant de corriger les erreurs de frappes présentes dans les noms des étudiants
+sum(duplicated(coll_tous[,-4])) # En effet il y a 251 'doublons' de ce type
+coll_tous$session[apply(coll_tous[,-4],1,paste,collapse="") %in% apply(coll_tous[duplicated(coll_tous[,-4]),-4],1,paste,collapse="")] <- NA # Retirer les données de 'session' de ces entrées, car ce n'est 
+#pas possible de déterminer quelle session est la bonne
+coll_tous <- coll_tous %>% unique # Retirer ces 'doublons'
+
+# renommer la table finale de collaborations
 collaborations <- unique(coll_tous)
 
 ################################################################################

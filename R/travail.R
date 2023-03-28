@@ -282,7 +282,8 @@ setdiff(coll_corr$etudiant1,etudiants$ID)
 setdiff(coll_corr$etudiant2,etudiants$ID)
 setdiff(etudiants$ID,coll_corr$etudiant1)
 setdiff(etudiants$ID,coll_corr$etudiant2)
-
+setdiff(cours$sigle, coll_corr$sigle)
+setdiff(coll_corr$sigle, cours$sigle)
 # 100% des ID sont cohérents!
 
 # renommer la table finale de collaborations et filtrer les duplicats

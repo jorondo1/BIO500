@@ -14,6 +14,7 @@ p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr,
 #       Cohérence collaborations - cours
 #       Cohérence collaborations - étudiants
 # 03.Création et injection de la bd
+# 04.Requêtes SQL
 
 ################################################################################
 #### 01.Nettoyage et assemblage des données ####################################
@@ -57,9 +58,29 @@ listCollab %<>% lapply(function(df) { # s'applique à chaque élément de la lis
 ### Réunir tous les df de données de collaborations dans un seul df
 coll_tous <- as.data.frame(rbindlist(listCollab, use.names=TRUE))
 
-### Vérifier les duplicats
-sum(duplicated(coll_tous)) # Il y a 2010 duplicats
-coll_corr <- coll_tous %>% unique # Retirer les duplicats des données
+# L'équipe 4 a rapporté une erreur dans 6 de ses entrées, qu'on corrige manuellement
+# parce que ce sont les seules entrées où 'etudiant1' et 'etudiant2' sont présentes et 'sigle' et 'session' sont manquantes.
+coll_tous[coll_tous$etudiant1 %nin% c(NA,"") & coll_tous$sigle %in% "",3:4] <- c("ECL615","E2022")
+
+### Vérifier si des données sont manquantes pour 'etudiant1', 'etudiant2', 'sigle' ou 'session'
+coll_tous[coll_tous$etudiant1 %in% c(NA,""),]
+coll_tous[coll_tous$etudiant2 %in% c(NA,""),] # Certaines entrées n'ont pas d'information pour etudiants 1 et 2
+coll_tous <- coll_tous[coll_tous$etudiant1 %nin% c(NA,""),] # Retirer les entrées de collaboration dont etudiant 1 est manquant
+coll_tous[coll_tous$sigle %in% c(NA,""),] # Aucune donnée de 'sigle' manquante
+coll_tous[coll_tous$session %in% c(NA,""),] # Aucune donnée de 'session' manquante
+
+### Vérifier s'il n'y a pas eu d'erreur entre la colonne 'sigle' et la colonne 'session'
+unique(coll_tous$sigle)[nchar(unique(coll_tous$sigle))!=6] # Deux erreurs présentes dans la colonne sigle : 
+#espace après INS154 
+#et présence d'un code de session plutôt que d'un sigle
+coll_tous$sigle[coll_tous$sigle %in% "INS154 "] <- "INS154" # Retirer l'espace suivant le sigle INS154
+coll_tous <- coll_tous[coll_tous$sigle %nin% "E2022",] # Retirer les entrées qui ne contiennent pas de sigle, mais plutôt un doublon de la session
+unique(coll_tous$session)[nchar(unique(coll_tous$session))!=5] # Une erreur présente dans la colonne session : présence d'un sigle
+coll_tous$session[coll_tous$session %in% "ECL615"] <- NA # Retirer ces données mais garder les entrées puisqu'une collaboration peut être intéressante 
+#même si sa session est inconnue
+
+### Retirer les duplicats des données
+coll_tous <- coll_tous %>% unique 
 
 #####################···
 ### ETUDIANTS ########···
@@ -176,33 +197,33 @@ colCours <- c("sigle", "credits")
 listCours %<>% lapply(function(x) x[(names(x) %in% colCours)])
 
 ### Joindre tous df cours de toutes les équipes en un un seul df
-cours <- as.data.frame(rbindlist(listCours, use.names=TRUE))
+cours_tous <- as.data.frame(rbindlist(listCours, use.names=TRUE))
 
 ### Retirer les rangées du df cours qui ne contiennent pas de données dans la colonne 'sigle'
-cours <- cours[!cours$sigle %in% c("",NA),]
+cours_tous <- cours_tous[!cours_tous$sigle %in% c("",NA),]
 
 ### Trouver les sigles de cours n'existant pas en comparant à la liste de 
 # cours officielle du bac en Biologie de l'UdeS
-cours$sigle[order(cours$sigle)] #les cours TSB302 et BIO400 n'existent pas 
+cours_tous$sigle[order(cours_tous$sigle)] #les cours TSB302 et BIO400 n'existent pas 
 
-### Corriger les sigle erronés à la fois pour cours et coll_corr
-cours$sigle[cours$sigle == "TSB302"] <- "TSB303" # Modifier TSB302 en TSB303 pour df cours
-coll_corr$sigle[coll_corr$sigle == "TSB302"] <- "TSB303" # Modifier TSB302 en TSB303 pour df coll_corr
-cours$sigle[cours$sigle == "BIO400"] <- "BOT400" # Modifier BIO400 en BOT400 pour df cours
-coll_corr$sigle[coll_corr$sigle == "BIO400"] <- "BOT400" # Modifier BIO400 en BOT400 pour df coll_corr
+### Corriger les sigle erronés à la fois pour cours et coll_tous
+cours_tous$sigle[cours_tous$sigle == "TSB302"] <- "TSB303" # Modifier TSB302 en TSB303 pour df cours
+coll_tous$sigle[coll_tous$sigle == "TSB302"] <- "TSB303" # Modifier TSB302 en TSB303 pour df coll_tous
+cours_tous$sigle[cours_tous$sigle == "BIO400"] <- "BOT400" # Modifier BIO400 en BOT400 pour df cours
+coll_tous$sigle[coll_tous$sigle == "BIO400"] <- "BOT400" # Modifier BIO400 en BOT400 pour df coll_tous
 
 ### Trouver les sigles dupliqués avec des crédits différents
-nrow(unique(cours))-length(unique(cours$sigle)) #Calculer le nbr d'erreurs de crédits dans les données
-unique(cours)[duplicated(unique(cours)[,1]),1] # Identifier les cours affichant plusieurs options de crédits
+nrow(unique(cours_tous))-length(unique(cours_tous$sigle)) #Calculer le nbr d'erreurs de crédits dans les données
+unique(cours_tous)[duplicated(unique(cours_tous)[,1]),1] # Identifier les cours affichant plusieurs options de crédits
 
 ### Modifier les valeurs de crédits erronnées pour les sigles dupliqués trouvés
-cours$credits[cours$sigle == "BIO109"] <- 1 
-cours$credits[cours$sigle == "ECL515"] <- 2
-cours$credits[cours$sigle == "TSB303"] <- 2
-cours$credits[cours$sigle == "BOT400"] <- 1
+cours_tous$credits[cours_tous$sigle == "BIO109"] <- 1 
+cours_tous$credits[cours_tous$sigle == "ECL515"] <- 2
+cours_tous$credits[cours_tous$sigle == "TSB303"] <- 2
+cours_tous$credits[cours_tous$sigle == "BOT400"] <- 1
 
 ### Valider que les sigles dupliqués avec des crédits différents ont été corrigés
-nrow(unique(cours))-length(unique(cours$sigle)) # 0 = all good!
+nrow(unique(cours_tous))-length(unique(cours_tous$sigle)) # 0 = all good!
 
 ################################################################################
 #### 02.Cohérence des variables partagées ######################################
@@ -212,82 +233,87 @@ nrow(unique(cours))-length(unique(cours$sigle)) # 0 = all good!
 ### Cohérence collaboration - cours ######···
 #########################################···
 
-# Trouver les sigles présents dans cours, mais pas dans coll_corr:
-(orphelins <- unique(cours$sigle)[unique(cours$sigle) %nin% 
-                                    unique(coll_corr$sigle)])
-# Il y a 10 cours présents dans cours qui n'ont pas donné lieu a des coll_corr
+# Trouver les sigles présents dans cours, mais pas dans coll_tous:
+(orphelins <- unique(cours_tous$sigle)[unique(cours_tous$sigle) %nin% 
+                                    unique(coll_tous$sigle)])
+# Il y a 10 cours présents dans cours qui n'ont pas donné lieu a des coll_tous
 
-# Retirer les cours présents dans cours mais pas dans coll_corr
-# car ces cours ne présentaient pas de coll_corr:
-cours <- cours[cours$sigle %nin% orphelins,] 
+# Retirer les cours présents dans cours mais pas dans coll_tous
+# car ces cours ne présentaient pas de coll_tous:
+cours_tous <- cours_tous[cours_tous$sigle %nin% orphelins,] 
 
-# Trouver les sigles présents dans coll_corr absents de cours
-unique(coll_corr$sigle)[unique(coll_corr$sigle) %nin% unique(cours$sigle)]
-# 4 erreurs sont présentes dans les sigles de coll_corr
+# Trouver les sigles présents dans coll_tous absents de cours
+unique(coll_tous$sigle)[unique(coll_tous$sigle) %nin% unique(cours_tous$sigle)]
+# 4 erreurs sont présentes dans les sigles de coll_tous
 
-# Retirer les coll_corr relatives à GBI105... il n'y avait pas de coll_corr dans ce cours:
-coll_corr <- coll_corr[!coll_corr$sigle == "GBI105",]
-
-# L'équipe 4 a rapporté une erreur dans 6 de ses entrées, qu'on corrige manuellement
-# parce que ce sont les seules entrées où ces données sont manquantes.
-coll_corr[coll_corr$sigle == "",3:4] <- c("ECL615","E2022")
+# Retirer les coll_tous relatives à GBI105... il n'y avait pas de coll_tous dans ce cours:
+coll_tous <- coll_tous[!coll_tous$sigle == "GBI105",]
 
 # Modifier le sigle GAE500 par GAE550:
-coll_corr$sigle[coll_corr$sigle == "GAE500"] <- "GAE550" 
+coll_tous$sigle[coll_tous$sigle == "GAE500"] <- "GAE550" 
 # Modifier le sigle ECL405 pour ECL404
-coll_corr$sigle[coll_corr$sigle == "ECL405"] <- "ECL404" 
+coll_tous$sigle[coll_tous$sigle == "ECL405"] <- "ECL404" 
+
+# Renommer le df cours_tous et filtrer les duplicats
+cours <- cours_tous %>% unique
 
 ###########################################···
 ### Cohérence collaboration - étudiants ####···
 ###########################################···
 
 # Vérifier la différence entre les identifiants étudiants:
-setdiff(etu_corr$ID, coll_corr$etudiant1 %>% unique)
+setdiff(etu_tous$ID, coll_tous$etudiant1 %>% unique)
 
 # Vérifier la différence entre (etudiant1 ou etudiant2) et ID
-setdiff(coll_corr$etudiant1 %>% unique, etu_corr$ID)
-setdiff(coll_corr$etudiant2 %>% unique, etu_corr$ID)
+setdiff(coll_tous$etudiant1 %>% unique, etu_tous$ID)
+setdiff(coll_tous$etudiant2 %>% unique, etu_tous$ID)
 # Plusieurs étudiants ont des erreurs de frappe!
 
 # On remplace les autres erreurs avec un fuzzy match :
-id <- etu_corr$ID
+id <- etu_tous$ID
 for (i in id) {
   toReplace <- agrepl(i, # ID à fuzzy-matcher
-                      coll_corr$etudiant1, # liste à chercher
+                      coll_tous$etudiant1, # liste à chercher
                       ignore.case = FALSE,
                       max.distance = 0.0001) # très sensible pour éviter de mélanger les noms similaires
-  coll_corr[toReplace,"etudiant1"] <- i # remplacer avec le bon ID
+  coll_tous[toReplace,"etudiant1"] <- i # remplacer avec le bon ID
 }
 # Une autre fois pour la colonne etudiant2
 for (i in id) {
-  toReplace <- agrepl(i,coll_corr$etudiant2, ignore.case = FALSE, max.distance = 0.0001)
-  coll_corr[toReplace,"etudiant2"] <- i 
+  toReplace <- agrepl(i,coll_tous$etudiant2, ignore.case = FALSE, max.distance = 0.0001)
+  coll_tous[toReplace,"etudiant2"] <- i 
 }
 
 # Ajouter les étudiants présents dans collaboration mais absents de etudiant
 # à la table etudiant
-setdiff(coll_corr$etudiant1, id)
-setdiff(coll_corr$etudiant2, id)
-setdiff(id, coll_corr$etudiant1)
-setdiff(id, coll_corr$etudiant2)
+setdiff(coll_tous$etudiant1, id)
+setdiff(coll_tous$etudiant2, id)
+setdiff(id, coll_tous$etudiant1)
+setdiff(id, coll_tous$etudiant2)
 
-# Les autres cas sont absents de etu_corr, on les ajoute:
-manquants <- data.frame(ID=setdiff(coll_corr$etudiant1 %>% unique, id))
+# Les autres cas sont absents de etu_tous, on les ajoute:
+manquants <- data.frame(ID=setdiff(coll_tous$etudiant1 %>% unique, id))
 
 # on rassemble le tout dans un seul df
-etudiants <- rbind(etu_corr, manquants)
+etudiants <- rbind(etu_tous, manquants)
 
 # Sanity check ultime :
-setdiff(coll_corr$etudiant1,etudiants$ID)
-setdiff(coll_corr$etudiant2,etudiants$ID)
-setdiff(etudiants$ID,coll_corr$etudiant1)
-setdiff(etudiants$ID,coll_corr$etudiant2)
-setdiff(cours$sigle, coll_corr$sigle)
-setdiff(coll_corr$sigle, cours$sigle)
+setdiff(coll_tous$etudiant1,etudiants$ID)
+setdiff(coll_tous$etudiant2,etudiants$ID)
+setdiff(etudiants$ID,coll_tous$etudiant1)
+setdiff(etudiants$ID,coll_tous$etudiant2)
+
 # 100% des ID sont cohérents!
 
-# renommer la table finale de collaborations et filtrer les duplicats
-collaborations <- unique(coll_corr)
+### Vérifier s'il y a des collaborations qui on été entrées plusieurs fois avec des 'session' différentes
+#On ne pouvait pas le faire avant de corriger les erreurs de frappes présentes dans les noms des étudiants
+sum(duplicated(coll_tous[,-4])) # En effet il y a 251 'doublons' de ce type
+coll_tous$session[apply(coll_tous[,-4],1,paste,collapse="") %in% apply(coll_tous[duplicated(coll_tous[,-4]),-4],1,paste,collapse="")] <- NA # Retirer les données de 'session' de ces entrées, car ce n'est 
+#pas possible de déterminer quelle session est la bonne
+coll_tous <- coll_tous %>% unique # Retirer ces 'doublons'
+
+# renommer la table finale de collaborations
+collaborations <- unique(coll_tous)
 
 ################################################################################
 #### 03.Création et injection de la bd #########################################
@@ -335,9 +361,43 @@ dbWriteTable(con, append = TRUE, name = "collaborations", value = collaborations
 dbWriteTable(con, append = TRUE, name = "etudiants", value = etudiants)
 dbWriteTable(con, append = TRUE, name = "cours", value = cours)
 
-# Nombre de liens par étudiant?
-# Décmopte de liens par paire d'étudiants
-# Enregistrer le tout en CSV
-# puis dans R,
-# calculer nombre d'étudiants, nombre de liens, et connectance du réseau
-# calculer le nombre de liens moyens par étudiant et la variance
+################################################################################
+#### 04.Requêtes SQL ###########################################################
+################################################################################
+
+### Créer un fichier csv du nombre de liens par étudiant
+dbGetQuery(con,
+           "SELECT COUNT(etudiant1) AS nbr_liens, etudiant1 AS etudiant
+  FROM collaborations
+  GROUP BY etudiant1
+;") %>% write.csv2(.,"resultats/liens_etudiants.csv",row.names=FALSE)
+
+### Créer un fichier csv du nombre de liens par paire d'étudiants
+dbGetQuery(con,
+           "SELECT etudiant1, etudiant2, COUNT(etudiant1) AS nbr_liens
+           FROM collaborations
+           GROUP BY etudiant1, etudiant2
+;") %>% write.csv2(.,"resultats/liens_paires_etudiants.csv",row.names=FALSE)
+
+### Déterminer le nombre d'étudiants
+nbr_etudiants <- dbGetQuery(con,
+                            "SELECT COUNT(ID) AS Nbr_etudiants
+                            FROM etudiants
+;")
+
+### Déterminer le nombre de liens entre les étudiants
+nbr_liens <- dbGetQuery(con,
+                        "SELECT COUNT(etudiant1) AS nbr_liens
+                        FROM collaborations
+;")
+
+### Déterminer la connectance (nbr liens observés/nbr de liens possibles)
+connectance <- nbr_liens/(nbr_etudiants*(nbr_etudiants-1)/2)
+
+### Déterminer le nombre moyen de liens par étudiant 
+liens_etudiants <-read.csv2("resultats/liens_etudiants.csv")
+nbr_liens_moy <- liens_etudiants$nbr_liens %>% mean
+
+### Déterminer la variance du nbr de liens moyens par étudiant
+sd_liens <- liens_etudiants$nbr_liens %>% sd
+

@@ -1,0 +1,7 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+clean.func|function|b21f4d9a05e2baa7|||||||||||||||
+clean_data|stem|5a3fd8cacdd0d5b5|85e32210ffaf1357|8dcf23b43bf7710e|-1026135149||t19445.1458830493s|119086014a187e48|23511|rds|local|vector|||3.48||
+data|stem|c0a7c98a193f3b57|0858aea846d135ef|72ce70351733e91d|1588979285||t19445.1196598101s|27d9dd089d93ba1c|24837|rds|local|vector|||0.05||
+lire.csv|function|b9512dbfb79a1c77|||||||||||||||
+rapport|stem|3a5540072a6d53c2|d9bd7b6eb6f9fa3a|8b6b08140ca8e0ec|-316371949|rapport/rapport.html*rapport/rapport.Rmd|t19445.1466578606s|572491ee0dd3a0e2|858090|file|local|vector|||2.22||
+readData.func|function|46077e593f7d4d1c|||||||||||||||

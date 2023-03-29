@@ -6,3 +6,6 @@ date: "2023-03-29"
 output: html_document
 ---
 
+```{R}
+print(dbListTables(con))
+```

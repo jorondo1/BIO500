@@ -23,7 +23,7 @@ p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr,
 ################################################################################
 
 # Fonction de lecture des fichiers de données
-lire.csv <- function(path) {
+lirecsv.fun <- function(path) {
   myList <- list() # Liste vide à populer
   for (file in path) { # boucle sur chaque fichier 
     # deux types de séparateurs existent:
@@ -35,14 +35,14 @@ lire.csv <- function(path) {
 }
 
 # Fonction pour créer une liste de 3 listes comportant les fichiers de données de cours, de collaboration et d'étudiants
-readData.func <- function (lire.csv) {
+readData.fun <- function () {
   pathCours <- Sys.glob("data/*cours*csv") # Créer un vecteur comporant le nom de tous les fichiers de données de cours
   pathCollab <- Sys.glob("data/*collaboration*csv") # Créer un vecteur comporant le nom de tous les fichiers de données de collaboration
   pathEtudiant <- Sys.glob("data/*etudiant*csv") # Créer un vecteur comporant le nom de tous les fichiers de données d'étudiants
   list_data <- list() # Liste vide qui contiendra les 3 listes de data frames
-  list_data[[1]] <- lire.csv(pathCours)
-  list_data[[2]] <- lire.csv(pathCollab)
-  list_data[[3]] <- lire.csv(pathEtudiant)
+  list_data[[1]] <- lirecsv.fun(pathCours)
+  list_data[[2]] <- lirecsv.fun(pathCollab)
+  list_data[[3]] <- lirecsv.fun(pathEtudiant)
   return(list_data)
 }
 
@@ -54,7 +54,7 @@ readData.func <- function (lire.csv) {
 ### COLLABORATIONS ###···
 #####################···
 
-clean.func <- function(data) {
+clean.fun <- function(data) {
   ### Importer les fichiers de collaborations de toutes les équipes
   listCollab <- data[[2]]
   # Colonnes d'intérêt :
@@ -331,54 +331,55 @@ clean.func <- function(data) {
 # #### 03.Fonctions création et injection de la bd #########################################
 # ################################################################################
 
-### Fonction pour créer db et créer connexion à la db
-conDB.func <- function() {
-  dbPath <- "db/travail_final.db"
+### Fonction pour créer la database, ses 3 tables et injecter les données de cours, collaborations et étudiants
+
+createdb.fun <- function(clean_data) {
+  dbPath <- "db/db2.db" # Créer le chemin du fichier db
   # Création de la db
   if(file.exists(dbPath)) {
-    file.remove(dbPath)
-    con <- dbConnect(SQLite(), dbname=dbPath)
+    file.remove(dbPath) # Supprimer le fichier db s'il existe déjà
   }
-  return(con)
+
+  con <- dbConnect(SQLite(), dbname=dbPath) # Créer le fichier et la connexion à la db
+  
+  dbSendQuery(con,
+               "CREATE TABLE etudiants (
+     ID	VARCHAR(50) NOT NULL,
+     region_administrative	VARCHAR(30),
+     regime_coop BOOLEAN,
+     formation_prealable VARCHAR(20),
+     annee_debut VARCHAR(5),
+     programme VARCHAR(8),
+     PRIMARY KEY (ID)
+   );")
+  
+   dbSendQuery(con,
+               "CREATE TABLE collaborations (
+     etudiant1 VARCHAR(50) NOT NULL,
+     etudiant2 VARCHAR(50) NOT NULL,
+     session VARCHAR(5),
+     sigle VARCHAR(6) NOT NULL,
+     PRIMARY KEY (etudiant1, etudiant2, sigle),
+     FOREIGN KEY (etudiant1) REFERENCES etudiants(ID),
+     FOREIGN KEY (etudiant2) REFERENCES etudiants(ID),
+     FOREIGN KEY (sigle) REFERENCES cours(sigle)
+   );")
+  
+   dbSendQuery(con,
+               "CREATE TABLE cours (
+     sigle VARCHAR(6) NOT NULL,
+     credits INT,
+     PRIMARY KEY (sigle)
+   );")
+  
+  ### INJECT DATABASE
+  dbWriteTable(con, append = TRUE, name = "collaborations", value = clean_data[[2]])
+  dbWriteTable(con, append = TRUE, name = "etudiants", value = clean_data[[1]])
+  dbWriteTable(con, append = TRUE, name = "cours", value = clean_data[[3]])
+  
+  dbDisconnect(con)
+  return(dbPath)
 }
-
-### Fonction pour créer les 3 tables de la db
-createDB.func <- function(con) {
-  dbSendQuery(con,
-              "CREATE TABLE etudiants (
-    ID	VARCHAR(50) NOT NULL,
-    region_administrative	VARCHAR(30),
-    regime_coop BOOLEAN,
-    formation_prealable VARCHAR(20),
-    annee_debut VARCHAR(5),
-    programme VARCHAR(8),
-    PRIMARY KEY (ID)
-  );")
-
-  dbSendQuery(con,
-              "CREATE TABLE collaborations (
-    etudiant1 VARCHAR(50) NOT NULL,
-    etudiant2 VARCHAR(50) NOT NULL,
-    session VARCHAR(5),
-    sigle VARCHAR(6) NOT NULL,
-    PRIMARY KEY (etudiant1, etudiant2, sigle),
-    FOREIGN KEY (etudiant1) REFERENCES etudiants(ID),
-    FOREIGN KEY (etudiant2) REFERENCES etudiants(ID),
-    FOREIGN KEY (sigle) REFERENCES cours(sigle)
-  );")
-
-  dbSendQuery(con,
-              "CREATE TABLE cours (
-    sigle VARCHAR(6) NOT NULL,
-    credits INT,
-    PRIMARY KEY (sigle)
-  );")
-}
-# ### INJECT DATABASE
-# dbWriteTable(con, append = TRUE, name = "collaborations", value = collaborations)
-# dbWriteTable(con, append = TRUE, name = "etudiants", value = etudiants)
-# dbWriteTable(con, append = TRUE, name = "cours", value = cours)
-# 
 # ################################################################################
 # #### 04.Requêtes SQL ###########################################################
 # ################################################################################

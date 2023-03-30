@@ -1,7 +1,16 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
+clean.fun|function|b21f4d9a05e2baa7|||||||||||||||
 clean.func|function|b21f4d9a05e2baa7|||||||||||||||
-clean_data|stem|5a3fd8cacdd0d5b5|85e32210ffaf1357|8dcf23b43bf7710e|-1026135149||t19445.1458830493s|119086014a187e48|23511|rds|local|vector|||3.48||
-data|stem|c0a7c98a193f3b57|0858aea846d135ef|72ce70351733e91d|1588979285||t19445.1196598101s|27d9dd089d93ba1c|24837|rds|local|vector|||0.05||
+clean_data|stem|5a3fd8cacdd0d5b5|51433893fdf7e94f|f1f1fc1d45d06acf|-1026135149||t19446.6870777258s|119086014a187e48|23511|rds|local|vector|||2.47||
+conDB.func|function|9136f5ffbb44c021|||||||||||||||
+createdb.fun|function|0b604ee6bd78a253|||||||||||||||
+createTables.func|function|0a02cb7964da05c5|||||||||||||||
+data|stem|c0a7c98a193f3b57|fd06011d0d58aaeb|55f4047c06903763|1588979285||t19446.600556786s|27d9dd089d93ba1c|24837|rds|local|vector|||0.03||
+db2|stem||b6a27275bcd63544|ef46db3751d8e999|-877177790|db/db2.db|t19446.6108311281s||0|file|local|vector|||||_paths_ 31mmissing files dbdb2.db39m
+dbpath|stem|da8c013f41bdc90c|8c168a6eebb07009|25d29fd2d0c2e09c|-2134058756||t19446.687079259s|e0224cf10db1a05d|62|rds|local|vector|||0.11|Closing open result set, pending rows. Closing open result set, pending rows. Closing open result set, pending rows|
 lire.csv|function|b9512dbfb79a1c77|||||||||||||||
-rapport|stem|3a5540072a6d53c2|d9bd7b6eb6f9fa3a|8b6b08140ca8e0ec|-316371949|rapport/rapport.html*rapport/rapport.Rmd|t19445.1466578606s|572491ee0dd3a0e2|858090|file|local|vector|||2.22||
-readData.func|function|46077e593f7d4d1c|||||||||||||||
+lirecsv.fun|function|b9512dbfb79a1c77|||||||||||||||
+rapport|stem|3d797861cd1ca975|fa90b3cf6569d303|ce6031dc883e6406|-316371949|rapport/rapport.html*rapport/rapport.Rmd|t19446.6870974992s|afc666629f9efe05|858208|file|local|vector|||1.87||
+readData.fun|function|7ff81ccc8ffe3d2e|||||||||||||||
+readData.func|function|f8035ae8432756a0|||||||||||||||
+travail_final2.db|stem|638414fe4de0aeb8|1505b869805f4001|fc5918871c3301ea|-1225184054||t19446.0435936647s|175116648b33090c|292|rds|local|vector|||0||

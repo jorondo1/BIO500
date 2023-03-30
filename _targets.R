@@ -9,24 +9,25 @@ source("scripts/travail_target.R")
 ### Pipeline
 list(
   tar_target(
-    data,
-    readData.func(lire.csv)
+    data, # Cible pour les données brutes
+    readData.fun()
   ),
   tar_target(
-    clean_data,
-    clean.func(data=data)
+    clean_data, # Cible pour les données nettoyées
+    clean.fun(data=data)
   ),
   tar_target(
-    connextion,
-    conDB.func()
+    dbpath, # Cible pour le chemin de la database
+    createdb.fun(clean_data)
   ),
-  tar_target(
-    db_vide,
-    createDB.func(connexion) ###TROUVER COMMENT ENREGISTRER UNE DB
-  ),
+#  tar_target(
+#    db2, 
+#    "db/db2.db",
+#    format = "file" # Cible pour le fichier db
+#  ),
   tar_render(
     rapport,
     path="rapport/rapport.Rmd",
-    params=list(clean_data=clean_data)
+    params=list(clean_data=clean_data,dbpath=dbpath)
   )
 )

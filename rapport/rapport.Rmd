@@ -7,5 +7,6 @@ output: html_document
 ---
 
 ```{R}
-print(dbListTables(con))
+print(dbpath)
+print(clean_data)
 ```

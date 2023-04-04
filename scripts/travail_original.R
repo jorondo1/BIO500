@@ -79,6 +79,9 @@ unique(coll_tous$session)[nchar(unique(coll_tous$session))!=5] # Une erreur pré
 coll_tous$session[coll_tous$session %in% "ECL615"] <- NA # Retirer ces données mais garder les entrées puisqu'une collaboration peut être intéressante 
 #même si sa session est inconnue
 
+### Retirer les collaborations d'étudiants avec eux-mêmes
+filter(coll_tous,coll_tous$etudiant1 != coll_tous$etudiant2)
+
 ### Retirer les duplicats des données
 coll_tous <- coll_tous %>% unique 
 

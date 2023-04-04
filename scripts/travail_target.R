@@ -93,6 +93,9 @@ clean.fun <- function(data) {
   coll_tous$session[coll_tous$session %in% "ECL615"] <- NA # Retirer ces données mais garder les entrées puisqu'une collaboration peut être intéressante
   #même si sa session est inconnue
   
+  ### Retirer les collaborations d'étudiants avec eux-mêmes
+  filter(coll_tous,coll_tous$etudiant1 != coll_tous$etudiant2)
+  
   ### Retirer les duplicats des données
   coll_tous <- coll_tous %>% unique
   
@@ -380,6 +383,24 @@ createdb.fun <- function(clean_data) {
   dbDisconnect(con)
   return(dbPath)
 }
+
+### Tests
+source("scripts/travail_target.R")
+data<-readData.fun()
+clean_data<-clean.fun(data=data)
+dbpath<-createdb.fun(clean_data)
+con <- dbConnect(SQLite(), dbname=dbpath)
+dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, region_administrative FROM etudiants GROUP BY region_administrative;")
+# bof principalement 2 régions estrie 10 et 16 monteregie et 117 NA
+dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, regime_coop FROM etudiants GROUP BY regime_coop;")
+# OKAY 10 False 31 TRUE et 122 NA
+dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, formation_prealable FROM etudiants GROUP BY formation_prealable;")
+# OKAY 28 preuniversitaire, 10 technique et 5 universitaire 120 NA
+dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, annee_debut FROM etudiants GROUP BY annee_debut;")
+# bof 120 NA 27 A2020 puis 1 à 6 les autres
+dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, programme FROM etudiants GROUP BY programme;")
+# ouf non 44 éco 2 en gen et 1 et 3 en cell et micro 113 NA
+
 # ################################################################################
 # #### 04.Requêtes SQL ###########################################################
 # ################################################################################

@@ -4,37 +4,41 @@ p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
 set.seed(04042023)
 # 
 # # Create edge list
-# w <- collaborations %>% count(etudiant1,etudiant2) %>% 
+# arcs <- collaborations %>% count(etudiant1,etudiant2) %>% 
 #   filter(etudiant1!=etudiant2) %>% # remove self-edges
 #   # remove duplicate from list
 #   mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
 #                         etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>% 
 #   distinct(id, .keep_all=TRUE) %>% mutate_if(is.character, as.factor)
 # 
-# am <- list2dist(w) %>% as.matrix  %>% replace(is.na(.),0)
+# adjPoids <- list2dist(arcs) %>% as.matrix  %>% replace(is.na(.),0)
 
-# Edge list without removing duplicates:
-w <- collaborations %>% count(etudiant1,etudiant2) %>% 
-  filter(etudiant1!=etudiant2) %>% mutate_if(is.character, as.factor) %>% as.matrix
+# Préparer la matrice d'arcs (1 arc = 1 collaboration) avec poids
+arcs <- collaborations %>% count(etudiant1,etudiant2) %>% 
+  filter(etudiant1!=etudiant2) %>% mutate_if(is.character, as.factor)
 
-am <- list2dist(w) %>% as.matrix %>% replace(is.na(.),0)
-am %>% isSymmetric
+# Matrice d'adjecence avec poids
+adjPoids <- list2dist(arcs) %>% as.matrix %>% replace(is.na(.),0)
+adjPoids %>% isSymmetric # La matrice est symétrique!
 
-ggplot(as.data.frame(w2), aes(x=etudiant1,y=etudiant2,fill=n)) + geom_tile() +
-  ylim(rev(levels(w$etudiant2))) + xlim(levels(w$etudiant1))
-# 
-# el <- as.matrix(w[,1:2])
-# g <- make_graph(edges=el, directed = FALSE)
-# #g <- set.edge.attribute(g, "weight", value = w$n)
-# 
+# # Matrice sans poids avec seulement les étudiants du cours
+# adjPA <- arcs[c(arcs$etudiant1 %in% etudiants$ID,
+#                 arcs$etudiant2 %in% etudiants$ID),] %>%
+#   list2dist %>% as.matrix %>% replace(.!=0,1)
+### Connectivité du réseau
+### Calculé seulement pour les étudiants du cours BIO500
+# conn.etu <- conn(adjPA)
+
+# ggplot(as.data.frame(arcs), aes(x=etudiant1,y=etudiant2,fill=n)) + geom_tile() +
+#   ylim(rev(levels(arcs$etudiant2))) + xlim(levels(arcs$etudiant1))
+
 # hist(degree.distribution(g))
-# layout <- layout_with_kk(g)
+# layout <- layout_arcsith_kk(g)
 # plot(g, layout=layout)
 # summary(g)
-# 
 
 ### COMPUTE CCi pour tous les noeuds
-cci <- clustcoeff(am, weighted=TRUE) %$% CCi %>% 
+cci <- clustcoeff(adjPoids, weighted=TRUE) %$% CCi %>% 
   data.frame(cci = .) %>% rownames_to_column("ID")
 
 ### Création d'une table de données pour tester les hypothèses
@@ -78,6 +82,12 @@ cciGroup %>% group_by(regime_coop) %>%
 
 
 ### PLOTS
+ggplot(cciGroup, aes(y = cci)) + 
+  geom_histogram(binwidth = 0.1, center=1) +
+  coord_flip() + 
+  theme_minimal()
+
+# CCi par formation préalable
 (cciForm.plot <- cciGroup %>% filter(!is.na(formation_prealable)) %>% 
   ggplot(aes(x = formation_prealable, y = cci)) +
   geom_boxplot(aes(fill = formation_prealable)) + geom_point(position="jitter") +
@@ -92,10 +102,10 @@ cciGroup %>% group_by(regime_coop) %>%
        title = "Distribution des coefficients de regroupement individuels par formation préalable.")
   )
 
-
+# CCi par programme (coop vs régulier)
 (cciReg.plot <- cciGroup %>% filter(!is.na(coop)) %>% 
-  ggplot(aes(x = coop, y = cci, color = coop)) +
-  geom_boxplot() + geom_point(position="jitter") +
+  ggplot(aes(x = coop, y = cci)) +
+  geom_boxplot(aes(fill = coop)) + geom_point(position="jitter") +
   theme_light() +
   theme(legend.position="none")+ # Hide legend
   stat_pvalue_manual(reg.stat,  
@@ -105,10 +115,10 @@ cciGroup %>% group_by(regime_coop) %>%
        title = "Distribution des coefficients de regroupement individuels par type de programme.")
 )
 
-
+# CCi par session de début de bac
 (cciYr.plot <- cciGroup %>% filter(!is.na(yr)) %>% 
-  ggplot(aes(x = yr, y = cci, color=yr)) +
-  geom_boxplot() + geom_point(position="jitter") +
+  ggplot(aes(x = yr, y = cci)) +
+  geom_boxplot(aes(fill = yr)) + geom_point(position="jitter") +
   theme_light() +
     theme(legend.position="none")+ # Hide legend
     stat_pvalue_manual(yr.stat,  
@@ -118,29 +128,78 @@ cciGroup %>% group_by(regime_coop) %>%
          title = "Distribution des coefficients de regroupement individuels par session de début de bac.")
 )
 
+# Distribution de la densité
+mean(arcs$n) # en moyenne 1.95 interactions par personne
+sd(arcs$n) # ±2.50 
 
-### NETWORK PLOTS
+L <- nrow(arcs)/2 # /2 parce que tout est (théoriquement) doublé
+S <- nrow(etudiants)
+densite <- L/S
+m <-  S*(S-1)/2 # nombre d'interactions possibles dans un réseau unipartite simple non-dirigé
+(C0 <- L/m) # environ 5.7 %; sous-estimée, car les interactions entre étudiants hors-cours ne sont pas toutes comptabilisées
+
+# Calculer le nombre d'arcs par personne
+k <- collaborations %>% count(etudiant1,etudiant2) %>%
+  filter(etudiant1!=etudiant2) %>% # remove self-edges
+  # remove duplicate from list
+  mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
+                        etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>%
+  distinct(id, .keep_all=TRUE) %>% mutate_if(is.character, as.factor) %>% 
+  group_by(etudiant1) %>% # varie légèrement si on utilise etudiant2, erreurs de saisie (devrait être symétrique)
+  summarise(n=sum(n))
+
+# Distribution de la densité
+ggplot(k, aes(y = n)) + 
+  geom_histogram(bins = length(unique(k$n)),
+                 center=1) +
+  coord_flip() + 
+  theme_minimal()
+
+shapiro_test(k,n) # très pas normale
+
+# Create weighted undirected graph using igraph
+g <- graph_from_adjacency_matrix(adjPoids, 
+                                 mode = 'undirected',
+                                 weighted = TRUE) %>% 
+  simplify
+
+g %>% diameter(directed = FALSE) # 13
+
+# Modularité/communautés (subgraphs)
+(fc <- cluster_fast_greedy(g) %>% membership %>% as.character)
+comm <- etudiants
+comm[,"commID"] <- fc
+
+### NETarcsORK PLOTS
 
 ## using ggnet, plot by regime
-net = network(as.matrix(w[,1:2]), directed = FALSE) 
-net %v% "regime" = arrange(etudiants, by = ID) %$% regime_coop
-ggnet2(net, size=6, weight = w$n, color="regime", palette = "Set2")
+net = network(as.matrix(arcs[,1:2]), directed = FALSE) 
+net %v% "comm" <- arrange(comm, by = ID) %$% commID
+
+ggnet2(net, size=6, weight=arcs$n, color="comm", palette="Set2")
+
+net %v% "regime" = arrange(comm, by = ID) %$% regime_coop
+
+ggnet2(net, size=6, weight = arcs$n, color="regime", palette = "Set2")
 
 ## plot by formation prealable 
-net %v% "form" = arrange(etudiants, by = ID) %$% formation_prealable
-ggnet2(net, size=6, weight = w$n, color="form", palette = "Set2")
+net %v% "form" = arrange(comm, by = ID) %$% formation_prealable
+ggnet2(net, size=6, weight = arcs$n, color="form", palette = "Set2")
 
-net %v% "start" = arrange(etudiants, by = ID) %$% annee_debut
-net %v% "prog" = arrange(etudiants, by = ID) %$% programme
+net %v% "start" = arrange(comm, by = ID) %$% annee_debut
+net %v% "prog" = arrange(comm, by = ID) %$% programme
 
-## with labels
-ggnet2(net, label = etudiants$ID %>% sort, label.size = 3,
+
+
+
+## arcs with labels
+ggnet2(net, label = comm$ID %>% sort, label.size = 3,
        color = "form", palette = "Set3", segment.alpha=0.2,
        segment.color = "grey90", size="degree", size.cut=TRUE,
        segment.size = 0.1)
 
 
-data.frame(start = etudiants$annee_debut) %>% 
+data.frame(start = comm$annee_debut) %>% 
   filter(!is.na(start)) %>% 
   mutate(start=case_when(start=="A2020" ~ "A2020",
                          TRUE ~ "Autre")) %>% 

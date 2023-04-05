@@ -1,0 +1,15 @@
+---
+title: "Rapport"
+author: "Jonathan Rondeau-Leclaire, Amélie Harbeck-Bastien, Samuel Fortin"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(pacman)
+p_load(tidygraph, igraph, dplyr, GGally,  magrittr,RColorBrewer, 
+       #NetworkToolbox, sparsebnUtils, network, sna, intergraph,
+       spaa, tibble, rstatix, ggpubr)
+
+```

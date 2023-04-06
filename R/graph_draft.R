@@ -3,15 +3,8 @@ p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
        RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr)
 set.seed(04042023)
 # 
-# # Create edge list
-# arcs <- collaborations %>% count(etudiant1,etudiant2) %>% 
-#   filter(etudiant1!=etudiant2) %>% # remove self-edges
-#   # remove duplicate from list
-#   mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
-#                         etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>% 
-#   distinct(id, .keep_all=TRUE) %>% mutate_if(is.character, as.factor)
-# 
-# adjPoids <- list2dist(arcs) %>% as.matrix  %>% replace(is.na(.),0)
+
+###!!! Muter les variabls tout au début à partir de etudiants!
 
 # Préparer la matrice d'arcs (1 arc = 1 collaboration) avec poids
 arcs <- collaborations %>% count(etudiant1,etudiant2) %>% 
@@ -171,7 +164,16 @@ as_edgelist(g)[ebs == min(ebs), ]
 
 # Modularité/communautés (subgraphs)
 (fc <- cluster_louvain(g, resolution = 0.5) %>% membership %>% as.character)
-comm <- etudiants
+comm <- etudiants %>% arrange(by = ID) %>% 
+  mutate(start=case_when(is.na(annee_debut) ~ "Inconnu",
+                         TRUE ~ annee_debut)) %>% 
+  mutate(prog=case_when(is.na(programme) ~ "Inconnu",
+                               TRUE ~ programme)) %>% 
+  mutate(regime=case_when(is.na(regime_coop) ~ "Inconnu",
+                               TRUE ~ regime_coop)) %>% 
+  mutate(form=case_when(is.na(formation_prealable) ~ "Inconnu",
+                               TRUE ~ formation_prealable)) 
+  
 comm[,"commID"] <- fc
 
 aov(data = comm, commID ~ programme) %>% summary
@@ -179,30 +181,69 @@ aov(data = comm, commID ~ programme) %>% summary
 ###! et les supposées communautés ne corrèlent avec aucune variable
 
 ### NETWORK PLOTS
+# Arcs avec un seul par paire (matnrice diagonale)
+arcs2 <- collaborations %>% count(etudiant1,etudiant2) %>%
+  filter(etudiant1!=etudiant2) %>% # remove self-edges
+  # remove duplicate from list
+  mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
+                        etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>%
+  distinct(id, .keep_all=TRUE) %>% mutate_if(is.character, as.factor)
+
+
 ## using ggnet to create network plots:
-net = network(as.matrix(arcs[,1:2]), directed = FALSE) 
-net %v% "comm" <- arrange(comm, by = ID) %$% commID
-ggnet2(net, size=6, , color="comm", palette="Set2")
 
-net %v% "regime" = arrange(comm, by = ID) %$% regime_coop
+# Create the network
+net = network(as.matrix(arcs2[,1:2]), directed = FALSE) 
 
-ggnet2(net, size=3, weight = arcs$n, color="regime", palette = "Set2")
+# Create a palette-generating function
+colfunc <- colorRampPalette(c("grey50", "black"))
+str_vec <- arcs2$n %>% max %>% colfunc
 
-## plot by formation prealable 
-net %v% "form" = arrange(comm, by = ID) %$% formation_prealable
-ggnet2(net, size=6, weight = arcs$n, color="form", palette = "Set2")
+# Ajouter les variables pertinentes au network:
+net %v% "regime" = comm %$% regime 
+net %v% "form" = comm %$% form
+net %v% "start" = comm %$% start
+net %v% "prog" = comm %$% prog
 
-net %v% "start" = arrange(comm, by = ID) %$% annee_debut
-net %v% "prog" = arrange(comm, by = ID) %$% programme
+# Vecteur de poids pour gradient de couleur :
+net %e% "colWeight" <- str_vec[arcs2$n] 
+
+# vecteur de poids pour l'épaisseur des arcs:
+net %e% "sizeWeight" <- arcs2$n/(max(arcs2$n))^0.5
+
+# vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
+net %v% "aNA_start" <- comm %>% 
+  mutate(n=case_when(start=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+
+net %v% "aNA_form" <- comm %>% 
+  mutate(n=case_when(form=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+
+net %v% "aNA_regime" <- comm %>% 
+  mutate(n=case_when(regime=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+
+net %v% "aNA_prog" <- comm %>% 
+  mutate(n=case_when(prog=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
 
 
+set.seed(2); ggnet2(net, color="start", palette='Pastel1', 
+                    edge.color="colWeight", 
+                    edge.size = "sizeWeight",
+                    size=5, node.alpha = "aNA_start")
 
+set.seed(2); ggnet2(net, color="prog", palette='Pastel2', 
+                    edge.color="colWeight", 
+                    edge.size = "sizeWeight",
+                    size=5, node.alpha = "aNA_prog")
 
-## arcs with labels
-ggnet2(net, label = comm$ID %>% sort, label.size = 3,
-       color = "form", palette = "Set3", segment.alpha=0.2,
-       segment.color = "grey90", size="degree", size.cut=TRUE,
-       segment.size = 0.1)
+set.seed(2); ggnet2(net, color="form", palette='Pastel2', 
+                    edge.color="colWeight", 
+                    edge.size = "sizeWeight",
+                    size=5, node.alpha = "aNA_form")
+
+set.seed(2); ggnet2(net, color="regime", palette='Dark2', 
+                    edge.color="colWeight", 
+                    edge.size = "sizeWeight",
+                    size=5, node.alpha = "aNA_regime")
 
 
 data.frame(start = comm$annee_debut) %>% 
@@ -210,6 +251,7 @@ data.frame(start = comm$annee_debut) %>%
   mutate(start=case_when(start=="A2020" ~ "A2020",
                          TRUE ~ "Autre")) %>% 
   group_by(start) %>% count
+
 
 # testing igraph functionalities
 adj <- get.adjacency(g)

@@ -21,9 +21,9 @@ p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr,
 ###############################################################################
 
 # Liste des données
-pathCours <- Sys.glob("donnees_BIO500/*cours*csv")
-pathCollab <- Sys.glob("donnees_BIO500/*collaboration*csv")
-pathEtudiant <- Sys.glob("donnees_BIO500/*etudiant*csv")
+pathCours <- Sys.glob("data/*cours*csv")
+pathCollab <- Sys.glob("data/*collaboration*csv")
+pathEtudiant <- Sys.glob("data/*etudiant*csv")
 
 # Fonction de lecture des fichiers
 lire.csv <- function(path) {

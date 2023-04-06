@@ -21,9 +21,9 @@ p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr,
 ###############################################################################
 
 # Liste des données
-pathCours <- Sys.glob("donnees_BIO500/*cours*csv")
-pathCollab <- Sys.glob("donnees_BIO500/*collaboration*csv")
-pathEtudiant <- Sys.glob("donnees_BIO500/*etudiant*csv")
+pathCours <- Sys.glob("data/*cours*csv")
+pathCollab <- Sys.glob("data/*collaboration*csv")
+pathEtudiant <- Sys.glob("data/*etudiant*csv")
 
 # Fonction de lecture des fichiers
 lire.csv <- function(path) {
@@ -78,6 +78,9 @@ coll_tous <- coll_tous[coll_tous$sigle %nin% "E2022",] # Retirer les entrées qu
 unique(coll_tous$session)[nchar(unique(coll_tous$session))!=5] # Une erreur présente dans la colonne session : présence d'un sigle
 coll_tous$session[coll_tous$session %in% "ECL615"] <- NA # Retirer ces données mais garder les entrées puisqu'une collaboration peut être intéressante 
 #même si sa session est inconnue
+
+### Retirer les collaborations d'étudiants avec eux-mêmes
+filter(coll_tous,coll_tous$etudiant1 != coll_tous$etudiant2)
 
 ### Retirer les duplicats des données
 coll_tous <- coll_tous %>% unique 

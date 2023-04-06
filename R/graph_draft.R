@@ -165,22 +165,28 @@ g <- graph_from_adjacency_matrix(adjPoids,
 
 g %>% diameter(directed = FALSE) # 13
 
+# Betweenness (mesure de centralité)
+ebs <- edge_betweenness(g)
+as_edgelist(g)[ebs == min(ebs), ]
+
 # Modularité/communautés (subgraphs)
-(fc <- cluster_fast_greedy(g) %>% membership %>% as.character)
+(fc <- cluster_louvain(g, resolution = 0.5) %>% membership %>% as.character)
 comm <- etudiants
 comm[,"commID"] <- fc
 
-### NETarcsORK PLOTS
+aov(data = comm, commID ~ programme) %>% summary
+###! Pas très pertinent, aucune structure n'est évidente à l'oeil 
+###! et les supposées communautés ne corrèlent avec aucune variable
 
-## using ggnet, plot by regime
+### NETWORK PLOTS
+## using ggnet to create network plots:
 net = network(as.matrix(arcs[,1:2]), directed = FALSE) 
 net %v% "comm" <- arrange(comm, by = ID) %$% commID
-
-ggnet2(net, size=6, weight=arcs$n, color="comm", palette="Set2")
+ggnet2(net, size=6, , color="comm", palette="Set2")
 
 net %v% "regime" = arrange(comm, by = ID) %$% regime_coop
 
-ggnet2(net, size=6, weight = arcs$n, color="regime", palette = "Set2")
+ggnet2(net, size=3, weight = arcs$n, color="regime", palette = "Set2")
 
 ## plot by formation prealable 
 net %v% "form" = arrange(comm, by = ID) %$% formation_prealable
@@ -205,3 +211,7 @@ data.frame(start = comm$annee_debut) %>%
                          TRUE ~ "Autre")) %>% 
   group_by(start) %>% count
 
+# testing igraph functionalities
+adj <- get.adjacency(g)
+layout <- layout_nicely(g)
+plot(g, layout=layout)

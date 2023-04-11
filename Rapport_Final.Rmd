@@ -1,12 +1,23 @@
 ---
 title: "Caractérisation d'un réseau de collaboration d'étudiants en biologie."
-author: "Amélie Harbeck-Bastien, Samuel Fortin, Jonathan Rondeau-Leclaire"
+author: 
+  - name : "Amélie Harbeck-Bastien" 
+    affiliation : "a"
+  - name : "Samuel Fortin"
+    affiliation : "a"
+  - name : "Jonathan Rondeau-Leclaire"
+    affiliation : "a"
+address:
+  - code: "a"
+    address "Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université, Sherbrooke, Québec, J1K 2R1"
+    
+abstract: |
+  Lorem ipsum
+    
 date: "`r Sys.Date()`"
-output: 
-  html_document:
-    theme: cosmo
-    highlight: tango
 bibliography: bibliographie.bib
+output: rticles::pnas_article
+csl: pnas.csl
 ---
 
 ```{r setup, include=FALSE}
@@ -14,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(pacman)
 p_load(tidygraph, igraph, dplyr, GGally,  magrittr,RColorBrewer, 
        #NetworkToolbox, sparsebnUtils, network, sna, intergraph,
-       spaa, tibble, rstatix, ggpubr)
+       spaa, tibble, rstatix, ggpubr, rticles)
 ```
 
 __TOTAL DU TEXTE : 1000 à 1500 mots (excl. code)__
@@ -26,9 +37,11 @@ Court, expliquer nos questions
 
 # Méthodes
 Courte description
-```{r}
-# scripts
+```{r figs, fig.capp="\\label{fig:plot1}Légende figure", fig.width=7, fig.height=6}
+data_plot <- tar_read(resultats) # target pour fetch les données des figures
+ # EXEMPLE
 ```
+Puis, on fait référence à la Figure \ref{fig.plot1} dans le texte. 
 
 # Résultats
 Courte section

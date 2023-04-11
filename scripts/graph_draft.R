@@ -1,7 +1,7 @@
 library(pacman)
 p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
        RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr)
-set.seed(04042023)
+
 # 
 
 ###!!! Muter les variabls tout au début à partir de etudiants!

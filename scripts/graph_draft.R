@@ -1,8 +1,7 @@
 library(pacman)
 p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
-       RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr)
-set.seed(04042023)
-# 
+       RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr,
+       visNetwork)
 
 ###!!! Muter les variabls tout au début à partir de etudiants!
 
@@ -125,9 +124,9 @@ ggplot(cciGroup, aes(y = cci)) +
 mean(arcs$n) # en moyenne 1.95 interactions par personne
 sd(arcs$n) # ±2.50 
 
-L <- nrow(arcs)/2 # /2 parce que tout est (théoriquement) doublé
-S <- nrow(etudiants)
-densite <- L/S
+(L <- nrow(arcs)/2) # /2 parce que tout est (théoriquement) doublé
+(S <- nrow(etudiants))
+(densite <- L/S)
 m <-  S*(S-1)/2 # nombre d'interactions possibles dans un réseau unipartite simple non-dirigé
 (C0 <- L/m) # environ 5.7 %; sous-estimée, car les interactions entre étudiants hors-cours ne sont pas toutes comptabilisées
 
@@ -209,7 +208,7 @@ net %v% "prog" = comm %$% prog
 net %e% "colWeight" <- str_vec[arcs2$n] 
 
 # vecteur de poids pour l'épaisseur des arcs:
-net %e% "sizeWeight" <- arcs2$n/(max(arcs2$n))^0.5
+net %e% "sizeWeight" <- (arcs2$n/(max(arcs2$n)))^0.6
 
 # vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
 net %v% "aNA_start" <- comm %>% 
@@ -225,7 +224,7 @@ net %v% "aNA_prog" <- comm %>%
   mutate(n=case_when(prog=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
 
 
-set.seed(2); ggnet2(net, color="start", palette='Pastel1', 
+set.seed(2); ggnet2(net, color="start", palette='Set1', 
                     edge.color="colWeight", 
                     edge.size = "sizeWeight",
                     size=5, node.alpha = "aNA_start")
@@ -257,3 +256,21 @@ data.frame(start = comm$annee_debut) %>%
 adj <- get.adjacency(g)
 layout <- layout_nicely(g)
 plot(g, layout=layout)
+
+#VisNetwork; en cliquant on peut voir le Cci
+nodes <- data.frame(id=sort(etudiants$ID), 
+                    label=sort(etudiants$ID), 
+                    color = "#B3E2CD")
+edges <- data.frame(from=arcs[,1], 
+                    to=arcs[,2], 
+                    value = (arcs[,3]/max(arcs[,3])^0.6),
+                    color = "#FDCDAC")
+visNetwork(nodes = nodes, edges = edges) %>% visIgraphLayout() %>% 
+  visOptions(highlightNearest = list(enabled = TRUE, 
+                                     degree = 1,
+                                     hover = TRUE,
+                                     hideColor = "#F2F2F2",
+                                     algorithm = "hierarchical",
+                                     labelOnly = FALSE),
+             nodesIdSelection = TRUE)
+

@@ -5,13 +5,7 @@ p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
 
 ###!!! Muter les variabls tout au début à partir de etudiants!
 
-# Préparer la matrice d'arcs (1 arc = 1 collaboration) avec poids
-arcs <- collaborations %>% count(etudiant1,etudiant2) %>% 
-  filter(etudiant1!=etudiant2) %>% mutate_if(is.character, as.factor)
 
-# Matrice d'adjecence avec poids
-adjPoids <- list2dist(arcs) %>% as.matrix %>% replace(is.na(.),0)
-adjPoids %>% isSymmetric # La matrice est symétrique!
 
 # # Matrice sans poids avec seulement les étudiants du cours
 # adjPA <- arcs[c(arcs$etudiant1 %in% etudiants$ID,
@@ -29,49 +23,33 @@ adjPoids %>% isSymmetric # La matrice est symétrique!
 # plot(g, layout=layout)
 # summary(g)
 
-### COMPUTE CCi pour tous les noeuds
-cci <- clustcoeff(adjPoids, weighted=TRUE) %$% CCi %>% 
-  data.frame(cci = .) %>% rownames_to_column("ID")
-
-### Création d'une table de données pour tester les hypothèses
-cciGroup <- etudiants %>% 
-  dplyr::select(ID, formation_prealable, regime_coop, annee_debut) %>% 
-  left_join(cci, by="ID") %>%  # add clustering coefficient
-  # Conserver seulement les étudiants ayant au moins une des trois variables d'intérêt:
-  dplyr::filter(!is.na(formation_prealable) || 
-                  !is.na(annee_debut) ||
-                  !is.na(regime_coop)) %>% 
-  mutate(yr = case_when(annee_debut == "A2020" ~ "A2020",
-                        TRUE ~ "Autre")) %>% 
-  mutate(coop = case_when(regime_coop == "TRUE" ~ "COOP",
-                          regime_coop == "FALSE" ~ "Régulier",
-                          TRUE ~ NA)) %>% 
-  mutate_if(is.character,as.factor) %>% ungroup
-
 ### NORMALITY TEST
 # H0: la variable cci suit une distribution normale
-cciGroup %>% group_by(formation_prealable) %>% 
-  filter(!is.na(formation_prealable)) %>% 
+cciGroup %>% group_by(form) %>% 
+  filter(form != "Inconnu") %>% # est-ce qu'on les retire ici ou plus loin???
   shapiro_test(cci)
 
-cciGroup %>% group_by(yr) %>% 
+cciGroup %>% group_by(annee) %>% 
   shapiro_test(cci)
 
-cciGroup %>% group_by(regime_coop) %>% 
-  shapiro_test(cci) # le cci est normalement distribuée à travers tous les groupes!
+cciGroup %>% group_by(regime) %>% 
+  shapiro_test(cci) 
+
+# le cci est normalement distribuée à travers tous les groupes, sauf les inconnus.
+# Cela fait du sens, car les inconnus sont des gens de l'extérieur du cours et 
+# leur réseau est loin d'être complet.
 
 ### KRUSKAL-WALLIS TEST
 # H0: tous les groupes ont la même distribution de cci
 
-(form.stat <- cciGroup %>% 
-  dunn_test(cci ~ formation_prealable)) # NS
+(form.stat <- cciGroup %>% filter(form != "Inconnu") %>% 
+    dunn_test(cci ~ form)) # NS
 
-(yr.stat <- cciGroup %>%
-  dunn_test(cci ~ yr)) # SIGNIFICATIF
+(annee.stat <- cciGroup %>% filter(annee != "Inconnu") %>% 
+    dunn_test(cci ~ annee)) # SIGNIFICATIF
 
-(reg.stat <- cciGroup %>%
-  dunn_test(cci ~ coop)) # NS
-
+(reg.stat <- cciGroup %>%filter(regime != "Inconnu") %>% 
+    dunn_test(cci ~ regime)) # NS
 
 ### PLOTS
 ggplot(cciGroup, aes(y = cci)) + 
@@ -80,9 +58,9 @@ ggplot(cciGroup, aes(y = cci)) +
   theme_minimal()
 
 # CCi par formation préalable
-(cciForm.plot <- cciGroup %>% filter(!is.na(formation_prealable)) %>% 
-  ggplot(aes(x = formation_prealable, y = cci)) +
-  geom_boxplot(aes(fill = formation_prealable)) + geom_point(position="jitter") +
+(cciForm.plot <- cciGroup %>% filter(form!="Inconnu") %>% 
+  ggplot(aes(x = form, y = cci)) +
+  geom_boxplot(aes(fill = form)) + geom_point(position="jitter") +
   theme_light() +
   theme(legend.position="none")+ # Hide legend
   stat_pvalue_manual(form.stat,  
@@ -95,25 +73,25 @@ ggplot(cciGroup, aes(y = cci)) +
   )
 
 # CCi par programme (coop vs régulier)
-(cciReg.plot <- cciGroup %>% filter(!is.na(coop)) %>% 
-  ggplot(aes(x = coop, y = cci)) +
-  geom_boxplot(aes(fill = coop)) + geom_point(position="jitter") +
+(cciReg.plot <- cciGroup %>% filter(regime!="Inconnu") %>% 
+  ggplot(aes(x = regime, y = cci)) +
+  geom_boxplot(aes(fill = regime)) + geom_point(position="jitter") +
   theme_light() +
   theme(legend.position="none")+ # Hide legend
   stat_pvalue_manual(reg.stat,  
                      label = "p.adj.signif",
                      y.position = 2.2) + # Add stat test
-  labs(x = "Régime Coop", y = "Coefficient de regroupement",
+  labs(x = "Régime regime", y = "Coefficient de regroupement",
        title = "Distribution des coefficients de regroupement individuels par type de programme.")
 )
 
 # CCi par session de début de bac
-(cciYr.plot <- cciGroup %>% filter(!is.na(yr)) %>% 
-  ggplot(aes(x = yr, y = cci)) +
-  geom_boxplot(aes(fill = yr)) + geom_point(position="jitter") +
+(cciYr.plot <- cciGroup %>% filter(annee!="Inconnu") %>% 
+  ggplot(aes(x = annee, y = cci)) +
+  geom_boxplot(aes(fill = annee)) + geom_point(position="jitter") +
   theme_light() +
     theme(legend.position="none")+ # Hide legend
-    stat_pvalue_manual(yr.stat,  
+    stat_pvalue_manual(annee.stat,  
                        label = "p.adj.signif",
                        y.position = 2.2) + # Add stat test
     labs(x = "Première session", y = "Coefficient de regroupement",
@@ -121,31 +99,13 @@ ggplot(cciGroup, aes(y = cci)) +
 )
 
 # Distribution de la densité
-mean(arcs$n) # en moyenne 1.95 interactions par personne
-sd(arcs$n) # ±2.50 
-
-(L <- nrow(arcs)/2) # /2 parce que tout est (théoriquement) doublé
-(S <- nrow(etudiants))
-(densite <- L/S)
-m <-  S*(S-1)/2 # nombre d'interactions possibles dans un réseau unipartite simple non-dirigé
-(C0 <- L/m) # environ 5.7 %; sous-estimée, car les interactions entre étudiants hors-cours ne sont pas toutes comptabilisées
-
-# Calculer le nombre d'arcs par personne
-k <- collaborations %>% count(etudiant1,etudiant2) %>%
-  filter(etudiant1!=etudiant2) %>% # remove self-edges
-  # remove duplicate from list
-  mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
-                        etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>%
-  distinct(id, .keep_all=TRUE) %>% mutate_if(is.character, as.factor) %>% 
-  group_by(etudiant1) %>% # varie légèrement si on utilise etudiant2, erreurs de saisie (devrait être symétrique)
-  summarise(n=sum(n))
-
-# Distribution de la densité
 ggplot(k, aes(y = n)) + 
   geom_histogram(bins = length(unique(k$n)),
                  center=1) +
   coord_flip() + 
-  theme_minimal()
+  theme_minimal() +
+  labs(title = "Distribution du nombre de personnes collaboratrices par personne étudiante",
+       y = "Nombre de personnes collaboratrices", x = "Fréquence")
 
 shapiro_test(k,n) # très pas normale
 
@@ -162,16 +122,7 @@ ebs <- edge_betweenness(g)
 as_edgelist(g)[ebs == min(ebs), ]
 
 # Modularité/communautés (subgraphs)
-(fc <- cluster_louvain(g, resolution = 0.5) %>% membership %>% as.character)
-comm <- etudiants %>% arrange(by = ID) %>% 
-  mutate(start=case_when(is.na(annee_debut) ~ "Inconnu",
-                         TRUE ~ annee_debut)) %>% 
-  mutate(prog=case_when(is.na(programme) ~ "Inconnu",
-                               TRUE ~ programme)) %>% 
-  mutate(regime=case_when(is.na(regime_coop) ~ "Inconnu",
-                               TRUE ~ regime_coop)) %>% 
-  mutate(form=case_when(is.na(formation_prealable) ~ "Inconnu",
-                               TRUE ~ formation_prealable)) 
+# (fc <- cluster_louvain(g, resolution = 0.5) %>% membership %>% as.character)
   
 comm[,"commID"] <- fc
 
@@ -181,13 +132,6 @@ aov(data = comm, commID ~ programme) %>% summary
 
 ### NETWORK PLOTS
 # Arcs avec un seul par paire (matnrice diagonale)
-arcs2 <- collaborations %>% count(etudiant1,etudiant2) %>%
-  filter(etudiant1!=etudiant2) %>% # remove self-edges
-  # remove duplicate from list
-  mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
-                        etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>%
-  distinct(id, .keep_all=TRUE) %>% mutate_if(is.character, as.factor)
-
 
 ## using ggnet to create network plots:
 

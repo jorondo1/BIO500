@@ -107,73 +107,27 @@ ggplot(k, aes(y = n)) +
   labs(title = "Distribution du nombre de personnes collaboratrices par personne étudiante",
        y = "Nombre de personnes collaboratrices", x = "Fréquence")
 
-shapiro_test(k,n) # très pas normale
+# Cette distribution est-elle normale?
+shapiro_test(k,n) # nope.
 
-# Create weighted undirected graph using igraph
-g <- graph_from_adjacency_matrix(adjPoids, 
-                                 mode = 'undirected',
-                                 weighted = TRUE) %>% 
-  simplify
-
-g %>% diameter(directed = FALSE) # 13
-
-# Betweenness (mesure de centralité)
-ebs <- edge_betweenness(g)
-as_edgelist(g)[ebs == min(ebs), ]
-
-# Modularité/communautés (subgraphs)
-# (fc <- cluster_louvain(g, resolution = 0.5) %>% membership %>% as.character)
-  
-comm[,"commID"] <- fc
-
-aov(data = comm, commID ~ programme) %>% summary
-###! Pas très pertinent, aucune structure n'est évidente à l'oeil 
-###! et les supposées communautés ne corrèlent avec aucune variable
-
-### NETWORK PLOTS
-# Arcs avec un seul par paire (matnrice diagonale)
-
-## using ggnet to create network plots:
-
-# Create the network
-net = network(as.matrix(arcs2[,1:2]), directed = FALSE) 
-
-# Create a palette-generating function
-colfunc <- colorRampPalette(c("grey50", "black"))
-str_vec <- arcs2$n %>% max %>% colfunc
-
-# Ajouter les variables pertinentes au network:
-net %v% "regime" = comm %$% regime 
-net %v% "form" = comm %$% form
-net %v% "start" = comm %$% start
-net %v% "prog" = comm %$% prog
-
-# Vecteur de poids pour gradient de couleur :
-net %e% "colWeight" <- str_vec[arcs2$n] 
-
-# vecteur de poids pour l'épaisseur des arcs:
-net %e% "sizeWeight" <- (arcs2$n/(max(arcs2$n)))^0.6
-
-# vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
-net %v% "aNA_start" <- comm %>% 
-  mutate(n=case_when(start=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
-
-net %v% "aNA_form" <- comm %>% 
-  mutate(n=case_when(form=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
-
-net %v% "aNA_regime" <- comm %>% 
-  mutate(n=case_when(regime=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
-
-net %v% "aNA_prog" <- comm %>% 
-  mutate(n=case_when(prog=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+# 
+# # Modularité/communautés (subgraphs)
+# # (fc <- cluster_louvain(g, resolution = 0.5) %>% membership %>% as.character)
+#   
+# comm[,"commID"] <- fc
+# 
+# aov(data = comm, commID ~ programme) %>% summary
+# ###! Pas très pertinent, aucune structure n'est évidente à l'oeil 
+# ###! et les supposées communautés ne corrèlent avec aucune variable
 
 
-set.seed(2); ggnet2(net, color="start", palette='Set1', 
+
+set.seed(2); ggnet2(net, color="annee", palette='Set2', 
                     edge.color="colWeight", 
                     edge.size = "sizeWeight",
                     size=5, node.alpha = "aNA_start")
 
-set.seed(2); ggnet2(net, color="prog", palette='Pastel2', 
+set.seed(2); ggnet2(net, color="prog", palette='Spectral', 
                     edge.color="colWeight", 
                     edge.size = "sizeWeight",
                     size=5, node.alpha = "aNA_prog")
@@ -189,32 +143,28 @@ set.seed(2); ggnet2(net, color="regime", palette='Dark2',
                     size=5, node.alpha = "aNA_regime")
 
 
-data.frame(start = comm$annee_debut) %>% 
-  filter(!is.na(start)) %>% 
-  mutate(start=case_when(start=="A2020" ~ "A2020",
-                         TRUE ~ "Autre")) %>% 
-  group_by(start) %>% count
-
-
-# testing igraph functionalities
-adj <- get.adjacency(g)
-layout <- layout_nicely(g)
-plot(g, layout=layout)
+# data.frame(annee = comm$annee) %>% 
+#   dplyr::filter(annee!="Inconnu") %>% 
+#   mutate(annee=case_when(annee=="A2020" ~ "A2020",
+#                          TRUE ~ "Autre")) %>% 
+#   group_by(annee) %>% count
+# 
+# 
+# # testing igraph functionalities
+# adj <- get.adjacency(g)
+# layout <- layout_nicely(g)
+# plot(g, layout=layout)
 
 #VisNetwork; en cliquant on peut voir le Cci
-nodes <- data.frame(id=sort(etudiants$ID), 
-                    label=sort(etudiants$ID), 
-                    color = "#B3E2CD")
-edges <- data.frame(from=arcs[,1], 
-                    to=arcs[,2], 
-                    value = (arcs[,3]/max(arcs[,3])^0.6),
-                    color = "#FDCDAC")
-visNetwork(nodes = nodes, edges = edges) %>% visIgraphLayout() %>% 
-  visOptions(highlightNearest = list(enabled = TRUE, 
-                                     degree = 1,
-                                     hover = TRUE,
-                                     hideColor = "#F2F2F2",
-                                     algorithm = "hierarchical",
-                                     labelOnly = FALSE),
+
+visNetwork(nodes = vNodes, edges = vEdges) %>% 
+  visIgraphLayout() %>% 
+  visOptions(
+    highlightNearest = list(enabled = TRUE, # interactivité
+                            hover = TRUE, # pas besoin de cliquer
+                            degree = 1, # montrer 1 niveau de collab
+                            hideColor = "#F2F2F2", # cacher les autres niveaux
+                            algorithm = "hierarchical",
+                            labelOnly = FALSE), # cacher les autres labels
              nodesIdSelection = TRUE)
 

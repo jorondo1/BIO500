@@ -1,5 +1,5 @@
 library(pacman)
-p_load(tidygraph, igraph, dplyr, #GGally, sna, intergraph, sparsebnUtils, 
+p_load(tidygraph, igraph, dplyr, GGally, #sna, intergraph, sparsebnUtils, 
        network, magrittr, RColorBrewer, NetworkToolbox, tibble, rstatix, ggpubr,
        visNetwork, spaa)
 
@@ -69,17 +69,92 @@ cciGroup <- etudiants %>% arrange(by = ID) %>%
 #--- Statistiques descriptives du réseau -------------------------------------#
 #-----------------------------------------------------------------------------#
 
+# Préparer les données pour la table 
+
 # Distribution de la densité
 mean(arcs$n) # en moyenne 1.95 interactions par personne
 sd(arcs$n) # ±2.50 
 
-(L <- nrow(arcs)/2) # /2 parce que tout est (théoriquement) doublé
-(S <- nrow(etudiants))
-(densite <- L/S)
+(L <- arcsUniq %>% nrow) # nombre de collabs
+(S <- etudiants %>% nrow) # nombre d'étudiants
+(densite <- L/S) # Moyenne de collabs par etudiant (sous estimée)
 m <-  S*(S-1)/2 # nombre d'interactions possibles dans un réseau unipartite simple non-dirigé
 (C0 <- L/m) # environ 5.7 %; sous-estimée, car les interactions entre étudiants hors-cours ne sont pas toutes comptabilisées
+
+# On peut mieux l'estimer en utilisant seulement les étudiants du cours, car 
+# théoriquement toutes les interactions 
+(L_core <- inner_join(x = arcs, y = comm, 
+                      by = join_by(etudiant1 == ID)) %>% nrow)
+(S_core <- comm %>% nrow)
+(densite_core <- L_core/S_core) # Mieux estimée, car on calcule par étudiant ayant 
+                            # des données complètes (ou presque)
+
+m_core <- S_core*(S_core-1)/2
+(C0_core <- L_core/m_core) 
+  # environ 70% des interactions potentielles réalisées entre les gens du cours!
 
 # Calculer le nombre d'arcs par personne
 k <- arcsUniq %>% 
   group_by(etudiant1) %>% # varie légèrement si on utilise etudiant2, erreurs de saisie (devrait être symétrique)
   summarise(n=sum(n))
+
+# Calculer le diamètre avec iGraph
+d <- graph_from_adjacency_matrix(adjPoids, 
+                                 mode = 'undirected',
+                                 weighted = TRUE) %>% 
+  simplify %>% 
+  diameter(directed = FALSE) # 13
+
+#-----------------------------------------------------------------------------#
+#--- Visualisation du réseau avec Network ------------------------------------#
+#-----------------------------------------------------------------------------#
+
+# Créer l'objet network à partir de arcsUniq
+net = network(arcsUniq[,1:2] %>% as.matrix, 
+              directed = FALSE) 
+
+# Fonction génératrice de palettes de couleur
+colfunc <- colorRampPalette(c("grey50", "black"))
+str_vec <- arcsUniq$n %>% max %>% colfunc
+
+# Network ne travaille pas bien avec les facteurs, on retourne en charactères
+comm <- cciGroup %>% dplyr::select(-cci) %>% 
+  mutate_if(is.factor, as.character)
+
+# Ajouter les variables pertinentes au network:
+net %v% "regime" = comm %$% regime 
+net %v% "form" = comm %$% form
+net %v% "annee" = comm %$% annee
+net %v% "prog" = comm %$% prog
+
+# Vecteur de poids pour gradient de couleur :
+net %e% "colWeight" <- str_vec[arcsUniq$n]
+
+# vecteur de poids pour l'épaisseur des arcs:
+net %e% "sizeWeight" <- (arcsUniq$n/(max(arcsUniq$n)))^0.6
+
+# vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
+net %v% "aNA_start" <- comm %>% 
+  mutate(n=case_when(annee=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+
+net %v% "aNA_form" <- comm %>% 
+  mutate(n=case_when(form=="Inconnu" ~ 0.2, TRUE ~ 1)) %$% n
+
+net %v% "aNA_regime" <- comm %>% 
+  mutate(n=case_when(regime=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+
+net %v% "aNA_prog" <- comm %>% 
+  mutate(n=case_when(prog=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+
+#-----------------------------------------------------------------------------#
+#--- Visualisation interactive du réseau avec visNetwork ---------------------#
+#-----------------------------------------------------------------------------#
+vNodes <- data.frame(id=sort(comm$ID), 
+                    label=sort(comm$ID), 
+                    color = "#B3E2CD")
+
+vEdges <- data.frame(from=arcs[,1], 
+                    to=arcs[,2], 
+                    value = (arcs[,3]/max(arcs[,3])^0.6),
+                    color = "#FDCDAC")
+

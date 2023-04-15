@@ -93,9 +93,6 @@ clean.fun <- function(data) {
   coll_tous$session[coll_tous$session %in% "ECL615"] <- NA # Retirer ces données mais garder les entrées puisqu'une collaboration peut être intéressante
   #même si sa session est inconnue
   
-  ### Retirer les collaborations d'étudiants avec eux-mêmes
-  filter(coll_tous,coll_tous$etudiant1 != coll_tous$etudiant2)
-  
   ### Retirer les duplicats des données
   coll_tous <- coll_tous %>% unique
   
@@ -327,6 +324,9 @@ clean.fun <- function(data) {
   # renommer la table finale de collaborations
   collaborations <- unique(coll_tous)
   
+  ### Retirer les collaborations d'étudiants avec eux-mêmes
+  filter(collaborations,collaborations$etudiant1 != collaborations$etudiant2)
+  
   return(list(etudiants,collaborations,cours)) # La fonction retourne une liste des 3 df
 }
 
@@ -340,7 +340,7 @@ createdb.fun <- function(clean_data) {
   dbPath <- "db/db2.db" # Créer le chemin du fichier db
   # Création de la db
   if(file.exists(dbPath)) {
-    file.remove(dbPath) # Supprimer le fichier db s'il existe déjà
+    unlink(dbPath, recursive=TRUE) # Supprimer le fichier db s'il existe déjà
   }
 
   con <- dbConnect(SQLite(), dbname=dbPath) # Créer le fichier et la connexion à la db
@@ -384,12 +384,7 @@ createdb.fun <- function(clean_data) {
   return(dbPath)
 }
 
-### Tests
-#source("scripts/travail_target.R")
-data<-readData.fun()
-clean_data<-clean.fun(data=data)
-dbpath<-createdb.fun(clean_data)
-con <- dbConnect(SQLite(), dbname=dbpath)
+
 #dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, region_administrative FROM etudiants GROUP BY region_administrative;")
 # bof principalement 2 régions estrie 10 et 16 monteregie et 117 NA
 #dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, regime_coop FROM etudiants GROUP BY regime_coop;")

@@ -1,16 +1,16 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-clean_data|stem|ce389dc92097f425|51433893fdf7e94f|f86b735378cf3e5a|-1026135149||t19451.0395957346s|119086014a187e48|23511|rds|local|vector|||1.19||
-clean.fun|function|b21f4d9a05e2baa7|||||||||||||||
+clean.fun|function|e95beee2e6e09317|||||||||||||||
 clean.func|function|b21f4d9a05e2baa7|||||||||||||||
+clean_data|stem|5a3fd8cacdd0d5b5|51433893fdf7e94f|fa0d2413d6aa8e84|-1026135149||t19462.6516356048s|119086014a187e48|23511|rds|local|vector|||2.7||
 conDB.func|function|9136f5ffbb44c021|||||||||||||||
-createdb.fun|function|0b604ee6bd78a253|||||||||||||||
+createdb.fun|function|a039002262c940fc|||||||||||||||
 createTables.func|function|0a02cb7964da05c5|||||||||||||||
-data|stem|362dd3381bc9840b|fd06011d0d58aaeb|55f4047c06903763|1588979285||t19451.039581822s|27d9dd089d93ba1c|24837|rds|local|vector|||0.015||
+data|stem|c0a7c98a193f3b57|fd06011d0d58aaeb|55f4047c06903763|1588979285||t19462.6516038647s|27d9dd089d93ba1c|24837|rds|local|vector|||0.05||
 db2|stem||b6a27275bcd63544|ef46db3751d8e999|-877177790|db/db2.db|t19446.6108311281s||0|file|local|vector|||||_paths_ 31mmissing files dbdb2.db39m
-dbpath|stem|96172b8d5c51159c|8c168a6eebb07009|950b340b95a21000|-2134058756||t19451.039596267s|e0224cf10db1a05d|62|rds|local|vector|||0.043|Closing open result set, pending rows. Closing open result set, pending rows. Closing open result set, pending rows|
+dbpath|stem|da8c013f41bdc90c|8c168a6eebb07009|f1c0fc05ac6841ae|-2134058756||t19462.6516367855s|e0224cf10db1a05d|62|rds|local|vector|||0.08|Closing open result set, pending rows. Closing open result set, pending rows. Closing open result set, pending rows|
 lire.csv|function|b9512dbfb79a1c77|||||||||||||||
 lirecsv.fun|function|b9512dbfb79a1c77|||||||||||||||
-rapport|stem|f45727dbc01ef3e0|fa90b3cf6569d303|a6493c55889acd01|-316371949|rapport/rapport.html*rapport/rapport.Rmd|t19451.0396110391s|8428590b3e6fe9bd|854753|file|local|vector|||1.303||
+rapport|stem|f45727dbc01ef3e0|6f90d1a99fd04c94|dc9ab8eeac44bb84|-316371949|rapport/rapport.html*rapport/rapport.Rmd|t19451.0396110391s||854753|file|local|vector|||0.48||Scanner error while scanning a simple key at line 11, column 5 could not find expected  at line 13, column 1
 readData.fun|function|7ff81ccc8ffe3d2e|||||||||||||||
 readData.func|function|f8035ae8432756a0|||||||||||||||
 travail_final2.db|stem|638414fe4de0aeb8|1505b869805f4001|fc5918871c3301ea|-1225184054||t19446.0435936647s|175116648b33090c|292|rds|local|vector|||0||

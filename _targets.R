@@ -20,14 +20,9 @@ list(
     dbpath, # Cible pour le chemin de la database
     createdb.fun(clean_data)
   ),
-#  tar_target(
-#    db2, 
-#    "db/db2.db",
-#    format = "file" # Cible pour le fichier db
-#  ),
   tar_render(
     rapport,
-    path="rapport/rapport.Rmd",
+    path="rapport/Rapport_Final.Rmd",
     params=list(clean_data=clean_data,dbpath=dbpath)
   )
 )

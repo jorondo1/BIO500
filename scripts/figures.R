@@ -12,7 +12,6 @@ p_load(tidygraph, igraph, dplyr, GGally, #sna, intergraph, sparsebnUtils,
 
 arcs <- collaborations %>%
   count(etudiant1,etudiant2) %>% # compter les collabsl
-  filter(etudiant1!=etudiant2) # À RETIRER!!!!!!!!!!!!!!
 
 # Pour travailler avec le package network, nous gardons seulement un arc par
 # collaboration.

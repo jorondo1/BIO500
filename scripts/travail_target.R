@@ -1,7 +1,9 @@
 ### Importer tous les packages nécessaires
 library(pacman)
-p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr, 
-       stringdist, tidyr, data.table, Hmisc)
+p_load(data.table, dplyr, GGally, ggpubr, Hmisc, igraph, magrittr, network, 
+       NetworkToolbox, purrr, RColorBrewer, readr, RSQLite, rstatix, 
+       stringdist, stringr, tibble, tidygraph, tidyr, 
+       spaa, visNetwork)
 
 ##########################···
 #### Contenu du script ####···
@@ -15,8 +17,8 @@ p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr,
 #       Cohérence entre les variables partagées
 #         Cohérence collaborations - cours
 #         Cohérence collaborations - étudiants
-# 03.Création et injection de la bd
-# 04.Requêtes SQL
+# 03.Fonction création et injection de la bd
+# 04.Fonction création matrice de réseau
 
 ################################################################################
 #### 01.Fonctions importation des données ######################################
@@ -92,9 +94,6 @@ clean.fun <- function(data) {
   unique(coll_tous$session)[nchar(unique(coll_tous$session))!=5] # Une erreur présente dans la colonne session : présence d'un sigle
   coll_tous$session[coll_tous$session %in% "ECL615"] <- NA # Retirer ces données mais garder les entrées puisqu'une collaboration peut être intéressante
   #même si sa session est inconnue
-  
-  ### Retirer les collaborations d'étudiants avec eux-mêmes
-  filter(coll_tous,coll_tous$etudiant1 != coll_tous$etudiant2)
   
   ### Retirer les duplicats des données
   coll_tous <- coll_tous %>% unique
@@ -182,11 +181,11 @@ clean.fun <- function(data) {
             "abitibi-temiscamingue", "laval", "cote_nord", "nord_du_quebec",
             "chaudiere_appalaches", "capitale-nationale")
   
-  # Boucle permettant de remplacer des erreurs de frappe mineurs grâce au fuzzy match
+  # Boucle permettant de remplacer des erreurs de frappe mineures grâce au fuzzy match
   etu_corr <- etu_tous
   for (i in regAd) {
-   toReplace <- agrep(i,etu_tous$region_administrative) # liste d'indices avec match fuzzy
-   etu_corr[toReplace,"region_administrative"] <- i # remplacer avec la bonne valeur
+   toReplace <- agrep(i,etu_corr$region_administrative) # liste d'indices avec match fuzzy
+   etu_tous[toReplace,"region_administrative"] <- i # remplacer avec la bonne valeur
   }
   
   # Vérifier la valeur originale des données corrigées
@@ -287,12 +286,12 @@ clean.fun <- function(data) {
    toReplace <- agrepl(i, # ID à fuzzy-matcher
                        coll_tous$etudiant1, # liste à chercher
                        ignore.case = FALSE,
-                       max.distance = 0.0001) # très sensible pour éviter de mélanger les noms similaires
+                       max.distance = 0.07) # très sensible pour éviter de mélanger les noms similaires
    coll_tous[toReplace,"etudiant1"] <- i # remplacer avec le bon ID
   }
   # Une autre fois pour la colonne etudiant2
   for (i in id) {
-   toReplace <- agrepl(i,coll_tous$etudiant2, ignore.case = FALSE, max.distance = 0.0001)
+   toReplace <- agrepl(i,coll_tous$etudiant2, ignore.case = FALSE, max.distance = 0.07)
    coll_tous[toReplace,"etudiant2"] <- i
   }
   
@@ -327,6 +326,9 @@ clean.fun <- function(data) {
   # renommer la table finale de collaborations
   collaborations <- unique(coll_tous)
   
+  ### Retirer les collaborations d'étudiants avec eux-mêmes
+  filter(collaborations,collaborations$etudiant1 != collaborations$etudiant2)
+  
   return(list(etudiants,collaborations,cours)) # La fonction retourne une liste des 3 df
 }
 
@@ -337,10 +339,11 @@ clean.fun <- function(data) {
 ### Fonction pour créer la database, ses 3 tables et injecter les données de cours, collaborations et étudiants
 
 createdb.fun <- function(clean_data) {
-  dbPath <- "db/db2.db" # Créer le chemin du fichier db
+  dbPath <- "db/reseau.db" # Créer le chemin du fichier db
   # Création de la db
   if(file.exists(dbPath)) {
-    file.remove(dbPath) # Supprimer le fichier db s'il existe déjà
+    gc() # S'assurer que la connexion au fichier .db est fermée avant de supprimer le fichier 
+    file.remove(dbPath, recursive=TRUE) # Supprimer le fichier db s'il existe déjà
   }
 
   con <- dbConnect(SQLite(), dbname=dbPath) # Créer le fichier et la connexion à la db
@@ -384,60 +387,212 @@ createdb.fun <- function(clean_data) {
   return(dbPath)
 }
 
-### Tests
-#source("scripts/travail_target.R")
-data<-readData.fun()
-clean_data<-clean.fun(data=data)
-dbpath<-createdb.fun(clean_data)
-con <- dbConnect(SQLite(), dbname=dbpath)
-#dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, region_administrative FROM etudiants GROUP BY region_administrative;")
-# bof principalement 2 régions estrie 10 et 16 monteregie et 117 NA
-#dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, regime_coop FROM etudiants GROUP BY regime_coop;")
-# OKAY 10 False 31 TRUE et 122 NA
-#dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, formation_prealable FROM etudiants GROUP BY formation_prealable;")
-# OKAY 28 preuniversitaire, 10 technique et 5 universitaire 120 NA
-#dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, annee_debut FROM etudiants GROUP BY annee_debut;")
-# bof 120 NA 27 A2020 puis 1 à 6 les autres
-#dbGetQuery(con, "SELECT COUNT(ID) as nbr_etudiants, programme FROM etudiants GROUP BY programme;")
-# ouf non 44 éco 2 en gen et 1 et 3 en cell et micro 113 NA
+# ################################################################################
+# #### Fonction création df des arcs avec poids ##################################
+# ################################################################################
+
+collab_poids_fun <- function(dbpath) {
+  
+  ### Créer un df des arcs pour la matrice de réseau avec poids 
+      #(1 arc pour chaque paire d'étudiants et le poids représente le nbr de collab)
+  con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
+  ### Ce df contient les collaborations dans les deux sens
+  arcs <- dbGetQuery(con,
+                     "SELECT etudiant1, etudiant2, COUNT(sigle) AS n 
+                     FROM collaborations 
+                     GROUP BY etudiant1, etudiant2;") # compter les collabs
+    
+    # Pour travailler avec le package network, nous gardons seulement un arc par
+    # collaboration.
+    arcsUniq <- arcs %>% 
+      mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
+                            etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>% 
+      distinct(id, .keep_all=TRUE) %>% 
+      mutate_if(is.character, as.factor) # doivent être des facteurs pour certaines fonctions utilisées ultérieurement
+    
+    arcs %<>% mutate_if(is.character, as.factor) # doivent être des facteurs pour certaines fonctions utilisées ultérieurement
+    dbDisconnect(con) # Déconnexion de la db
+    return(list(arcs,arcsUniq))
+}
 
 # ################################################################################
-# #### 04.Requêtes SQL ###########################################################
+# #### Fonction création matrice d'adjacence avec poids ##########################
 # ################################################################################
-# 
-# ### Créer un fichier csv du nombre de liens par étudiant
-# dbGetQuery(con,
-#            "SELECT COUNT(etudiant1) AS nbr_liens, etudiant1 AS etudiant
-#   FROM collaborations
-#   GROUP BY etudiant1
-# ;") %>% write.csv2(.,"resultats/liens_etudiants.csv",row.names=FALSE)
-# 
-# ### Créer un fichier csv du nombre de liens par paire d'étudiants
-# dbGetQuery(con,
-#            "SELECT etudiant1, etudiant2, COUNT(etudiant1) AS nbr_liens
-#            FROM collaborations
-#            GROUP BY etudiant1, etudiant2
-# ;") %>% write.csv2(.,"resultats/liens_paires_etudiants.csv",row.names=FALSE)
-# 
-# ### Déterminer le nombre d'étudiants
-# nbr_etudiants <- dbGetQuery(con,
-#                             "SELECT COUNT(ID) AS Nbr_etudiants
-#                             FROM etudiants
-# ;")
-# 
-# ### Déterminer le nombre de liens entre les étudiants
-# nbr_liens <- dbGetQuery(con,
-#                         "SELECT COUNT(etudiant1) AS nbr_liens
-#                         FROM collaborations
-# ;")
-# 
-# ### Déterminer la connectance (nbr liens observés/nbr de liens possibles)
-# connectance <- nbr_liens/(nbr_etudiants*(nbr_etudiants-1)/2)
-# 
-# ### Déterminer le nombre moyen de liens par étudiant 
-# liens_etudiants <-read.csv2("resultats/liens_etudiants.csv")
-# nbr_liens_moy <- liens_etudiants$nbr_liens %>% mean
-# 
-# ### Déterminer la variance du nbr de liens moyens par étudiant
-# sd_liens <- liens_etudiants$nbr_liens %>% sd
+
+matrice_fun <- function (arcs) {
+  ### Calculer la matrice d'adjacence avec poids, où le poids représente
+  # le nombre de fois que deux étudiants ont travaillé ensemble
+  adjPoids <- list2dist(arcs) %>% 
+    as.matrix %>% replace(is.na(.),0)
+  adjPoids %>% isSymmetric # La matrice est symétrique! 
+  return(adjPoids)
+}
+
+# ################################################################################
+# #### Fonction création df du cci pour chaque etudiants #########################
+# ################################################################################
+
+cci_fun <- function (matrice_adj) {
+  # Calculer le CCi pour tous les noeuds
+  cci <- clustcoeff(matrice_adj, weighted=TRUE) %$% CCi %>% 
+    data.frame(cci = .) %>% 
+    rownames_to_column("ID")
+  return(cci)
+}
+
+# ##############################################################################
+# #### Fonction création du df des noeuds (tous les étudiants) avec cci et #####
+# #### informations utilisées pour tester hypothèses et produire graphiques ####
+# ##############################################################################
+
+noeuds_tous_fun <- function (dbpath,df_cci) {
+  con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
+  # Création d'un df des étudiants (noeuds) et de leurs données utiles pour tester 
+  #les hypothèses et produire les figures
+  df_noeuds_tous <- dbGetQuery(con,"
+                         SELECT ID, formation_prealable, regime_coop, programme, annee_debut 
+                         FROM etudiants") 
+  df_noeuds_tous <- left_join(df_noeuds_tous,df_cci, by="ID") %>% # ajouter le CCi
+    
+    # Formater les variables pour des catégories pertinentes et des figures propres
+    mutate(annee = case_when(is.na(annee_debut) ~ "Inconnu",
+                             annee_debut == "A2020" ~ "A2020",
+                             TRUE ~ "Autre"),
+           prog = case_when(is.na(programme) ~ "Inconnu",
+                            TRUE ~ programme),
+           regime = case_when(regime_coop == "TRUE" ~ "COOP",
+                              regime_coop == "FALSE" ~ "Régulier",
+                              is.na(regime_coop) ~ "Inconnu"),
+           form = case_when(is.na(formation_prealable) ~ "Inconnu",
+                            TRUE ~ formation_prealable), .keep="unused") %>% 
+    mutate_if(is.character,as.factor) %>% ungroup
+  dbDisconnect(con) # Déconnexion de la db
+  return(df_noeuds_tous)
+}
+
+# ##############################################################################
+# #### Fonction sélection des noeuds de la classe du df des noeuds #############
+# ##############################################################################
+
+noeuds_classe_fun <- function (df_noeuds_tous) {
+  # Conserver seulement les étudiants ayant au moins une des quatre variables d'intérêt
+  df_noeuds_classe <- df_noeuds_tous %>% mutate_if(is.factor,as.character) %>% dplyr::filter(
+                    form!="Inconnu" |
+                    annee!="Inconnu" |
+                    regime!="Inconnu" |
+                    prog!="Inconnu")
+  return(df_noeuds_classe)
+}
+
+# ##############################################################################
+# #### Fonction création des statistiques descriptives du réseau ###############
+# ##############################################################################
+
+stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) {
+  con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
+  # Distribution de la densité
+  mean <- mean(arcs$n) # en moyenne 1.95 collaborations par paire d'étudiants
+  sd <- sd(arcs$n) # ±2.50 
+  
+  L <- arcsUniq %>% nrow # nombre d'intéractions au sein du réseau 
+  S <- dbGetQuery(con,"SELECT count(ID) FROM etudiants;") # nombre d'étudiants
+  densite <- L/S # Moyenne d'interactions par etudiant (sous estimée)
+  m <-  S*(S-1)/2 # nombre d'interactions possibles dans un réseau unipartite simple non-dirigé
+  C0 <- L/m # environ 5.7 %; sous-estimée, car les interactions entre étudiants hors-cours ne sont pas toutes comptabilisées
+  
+  # On peut mieux l'estimer en utilisant seulement les étudiants du cours, car 
+  # théoriquement toutes les interactions 
+  L_core <- inner_join(x = arcs, y = df_noeuds_classe, 
+                        by = join_by(etudiant1 == ID)) %>% 
+                        dplyr::filter(etudiant2 %in% df_noeuds_classe$ID) %>% # Conserver uniquement interactions entre 2 étudiants du cours
+                        nrow
+  S_core <- df_noeuds_classe %>% nrow
+  densite_core <- L_core/S_core # Mieux estimée, car on calcule par étudiant ayant 
+  # des données complètes (ou presque)
+  
+  m_core <- S_core*(S_core-1)/2 # nombre d'interactions possibles dans un réseau des étudiants du cours unipartite simple non-dirigé
+  C0_core <- L_core/m_core 
+  # environ 43% des interactions potentielles réalisées entre les gens du cours!
+  
+  # Calculer le nombre d'arcs par personne
+  k <- arcs %>% 
+    group_by(etudiant1) %>% # varie légèrement si on utilise etudiant2, erreurs de saisie (devrait être symétrique)
+    summarise(n=n())
+  
+  # Calculer le diamètre avec iGraph
+  d <- graph_from_adjacency_matrix(matrice_adj, 
+                                   mode = 'undirected',
+                                   weighted = TRUE) %>% 
+    simplify %>% 
+    diameter(directed = FALSE) # 13
+  dbDisconnect(con) # Déconnexion de la db
+  return(list(mean=mean,
+              sd=sd,
+              L=L,
+              S=S,
+              densite=densite,
+              m=m,
+              C0=C0,
+              L_core=L_core,
+              S_core=S_core,
+              densite_core=densite_core,
+              m_core=m_core,
+              C0_core=C0_core,
+              k=k,
+              d=d))
+} 
+
+# ######################################################################################
+# #### Fonction création de l'object network utilisé pour le graphique du réseau #######
+# ######################################################################################
+
+network_fun <- function (arcsUniq,df_noeuds_classe) {
+  # Créer l'objet network à partir de arcsUniq
+  net = network(arcsUniq[,1:2] %>% as.matrix, 
+                directed = FALSE) 
+  
+  # Fonction génératrice de palettes de couleur
+  colfunc <- colorRampPalette(c("grey50", "black"))
+  str_vec <- arcsUniq$n %>% max %>% colfunc
+  
+  # Network ne travaille pas bien avec les facteurs, on retourne en charactères
+  df_noeuds_classe <- df_noeuds_classe %>% 
+    mutate_if(is.factor, as.character)
+  
+  # Ajouter la variable annee aux noeuds
+  net %v% "annee" = df_noeuds_classe %$% annee
+  
+  # Vecteur de poids pour gradient de couleur :
+  net %e% "colWeight" <- str_vec[arcsUniq$n]
+  
+  # vecteur de poids pour l'épaisseur des arcs:
+  net %e% "sizeWeight" <- (arcsUniq$n/(max(arcsUniq$n)))^0.6
+  
+  # vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
+  net %v% "aNA_start" <- df_noeuds_classe %>% 
+    mutate(n=case_when(annee=="Inconnu" ~ 0.3, TRUE ~ 1)) %$% n
+  
+  return(net)
+}
+
+# ##############################################################################
+# #### Fonction création des df de noeuds et d'arcs utilisés ###################
+# #### pour le graphique interactif avec VisNetwork ############################
+# ##############################################################################
+
+noeuds_arcs_fun <- function (df_noeuds_tous,arcs) {
+  # Créer un df des noeuds du réseau (étudiants)
+  vNodes <- data.frame(id=sort(df_noeuds_tous$ID), 
+                       label=sort(df_noeuds_tous$ID), 
+                       color = "#B3E2CD")
+  
+  # Créer un df des arcs du réseau
+  vEdges <- data.frame(from=arcs[,1], 
+                       to=arcs[,2], 
+                       value = (arcs[,3]/max(arcs[,3])^0.6), # Le nbr de collaborations pour chaque interaction (arc) a été
+                       color = "#FDCDAC")                    # normalisé avec un exposant de 0.6 choisi par essai-erreur pour que
+  return(list(vNodes,vEdges))                                # l'interval d'épaisseur des arcs soit visuellement clair dans le graphique
+}
+
+
 

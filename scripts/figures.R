@@ -11,18 +11,17 @@ p_load(tidygraph, igraph, dplyr, GGally, #sna, intergraph, sparsebnUtils,
 # cette matrice contient les collaborations dans les deux sens
 
 arcs <- collaborations %>%
-  count(etudiant1,etudiant2) %>% # compter les collabsl
-  filter(etudiant1!=etudiant2) # À RETIRER!!!!!!!!!!!!!!
+  count(etudiant1,etudiant2) %>% # compter les collabs
 
 # Pour travailler avec le package network, nous gardons seulement un arc par
 # collaboration.
 arcsUniq <- arcs %>% 
   mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
                         etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>%
-  distinct(id, .keep_all=TRUE) %>% 
-  mutate_if(is.character, as.factor)
+  distinct(id, .keep_all=TRUE) %>% # Conserver uniquement 1 arc par paire d'étudiants
+  mutate_if(is.character, as.factor) # doivent être des facteurs pour les fonctions suivantes
 
-arcs %<>% mutate_if(is.character, as.factor) # doivent être des facteurs pour 
+arcs %<>% mutate_if(is.character, as.factor) # doivent être des facteurs pour les fonctions suivantes
 
 #-----------------------------------------------------------------------------#
 #--- Calcul du coefficient de regroupment individuel -------------------------#

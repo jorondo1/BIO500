@@ -1,6 +1,6 @@
 ### Importer tous les packages nécessaires
 library(pacman)
-p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr, 
+p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr, rticles,
        stringdist, tidyr, data.table, Hmisc,targets,visNetwork,tarchetypes,rmarkdown)
 
 ### Scripts R
@@ -45,12 +45,11 @@ list(
     network_fun(arcsUniq=collab_poids[[2]],df_noeuds=df_noeuds)
   ),
   tar_target(
-    noeuds_arcs,
+    noeuds_arcs, # Cible pour les df de noeuds et d'arcs utilisés par la fonction VisNetwork
     noeuds_arcs_fun(df_noeuds=df_noeuds,arcs=collab_poids[[1]])
   ),
   tar_render(
     rapport,
-    path="rapport/test_rapport.Rmd",
-    params=list(clean_data=clean_data,stats=stats)
+    path="rapport/Rapport_Final.Rmd"
   )
 )

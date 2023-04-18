@@ -7,25 +7,23 @@ author:
     affiliation : "a"
   - name : "Jonathan Rondeau-Leclaire"
     affiliation : "a"
-address:
+address :
   - code: "a"
-    address "Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université, Sherbrooke, Québec, J1K 2R1"
+    address : "Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université, Sherbrooke, Québec, J1K 2R1"
     
 abstract: |
   Lorem ipsum
     
 date: "`r Sys.Date()`"
-bibliography: bibliographie.bib
-output: rticles::pnas_article
-csl: pnas.csl
+bibliography : bibliographie.bib
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(pacman)
-p_load(tidygraph, igraph, dplyr, GGally,  magrittr,RColorBrewer, 
-       #NetworkToolbox, sparsebnUtils, network, sna, intergraph,
-       spaa, tibble, rstatix, ggpubr, rticles)
+p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
+       RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr,
+       visNetwork)
 ```
 
 __TOTAL DU TEXTE : 1000 à 1500 mots (excl. code)__
@@ -37,9 +35,20 @@ Court, expliquer nos questions
 
 # Méthodes
 Courte description
-```{r figs, fig.capp="\\label{fig:plot1}Légende figure", fig.width=7, fig.height=6}
-data_plot <- tar_read(resultats) # target pour fetch les données des figures
- # EXEMPLE
+```{r figure interactive du reseau, fig.capp="\\label{fig:plot1}Légende figure", fig.width=7, fig.height=6}
+noeuds_arcs <- tar_read(noeuds_arcs) # target pour fetch les df de noeuds et d'arcs utilisés par visNetwork
+#VisNetwork; en cliquant on peut voir le Cci
+
+visNetwork(nodes = noeuds_arcs[[1]], edges = noeuds_arcs[[2]]) %>% 
+  visIgraphLayout() %>% 
+  visOptions(
+    highlightNearest = list(enabled = TRUE, # interactivité
+                            hover = TRUE, # pas besoin de cliquer
+                            degree = 1, # montrer 1 niveau de collab
+                            hideColor = "#F2F2F2", # cacher les autres niveaux
+                            algorithm = "hierarchical",
+                            labelOnly = FALSE), # cacher les autres labels
+             nodesIdSelection = TRUE)
 ```
 Puis, on fait référence à la Figure \ref{fig.plot1} dans le texte. 
 

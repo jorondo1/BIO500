@@ -1,6 +1,6 @@
 ### Importer tous les packages nécessaires
 library(pacman)
-p_load(dplyr, RSQLite, magrittr, stringr, purrr, readr, rticles,
+p_load(Hmisc, targets, dplyr, RSQLite, magrittr, stringr, purrr, readr, rticles,
        stringdist, tidyr, data.table, Hmisc,targets,visNetwork,tarchetypes,rmarkdown)
 
 ### Scripts R

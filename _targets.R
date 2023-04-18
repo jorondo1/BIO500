@@ -33,20 +33,24 @@ list(
     cci_fun(matrice_adj=matrice_adj)
   ),
   tar_target(
-    df_noeuds, # Cible pour le df des noeuds avec informations utiles
-    noeuds_fun(dbpath=dbpath,df_cci=df_cci)
+    df_noeuds_tous, # Cible pour le df de tous noeuds avec informations utiles
+    noeuds_tous_fun(dbpath=dbpath,df_cci=df_cci)
+  ),
+  tar_target(
+    df_noeuds_classe, # Cible pour le df des noeuds de la classe seulement
+    noeuds_classe_fun(df_noeuds_tous)
   ),
   tar_target(
     stats, # Cible pour les statistiques mesurées sur le réseau
-    stats_fun(dbpath=dbpath,arcs=collab_poids[[1]],arcsUniq=collab_poids[[2]],df_noeuds=df_noeuds,df_cci,matrice_adj=matrice_adj)
+    stats_fun(dbpath=dbpath,arcs=collab_poids[[1]],arcsUniq=collab_poids[[2]],df_noeuds_classe=df_noeuds_classe,df_cci,matrice_adj=matrice_adj)
   ),
   tar_target(
     network, # Cible pour l'objet network utilisé pour la représentation graphique du réseau
-    network_fun(arcsUniq=collab_poids[[2]],df_noeuds=df_noeuds)
+    network_fun(arcsUniq=collab_poids[[2]],df_noeuds_classe=df_noeuds_classe)
   ),
   tar_target(
     noeuds_arcs, # Cible pour les df de noeuds et d'arcs utilisés par la fonction VisNetwork
-    noeuds_arcs_fun(df_noeuds=df_noeuds,arcs=collab_poids[[1]])
+    noeuds_arcs_fun(df_noeuds_tous=df_noeuds_tous,arcs=collab_poids[[1]])
   ),
   tar_render(
     rapport,

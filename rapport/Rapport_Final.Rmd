@@ -23,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(pacman)
 p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
        RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr,
-       visNetwork)
+       visNetwork,gridExtra)
 ```
 
 __TOTAL DU TEXTE : 1000 à 1500 mots (excl. code)__
@@ -33,10 +33,9 @@ __TOTAL DU TEXTE : 1000 à 1500 mots (excl. code)__
 # Introduction
 Court, expliquer nos questions
 
-# Méthodes
-Courte description
+Présenter notre réseau. 
 ```{r figure interactive du reseau, fig.capp="\\label{fig:plot1}Légende figure", fig.width=7, fig.height=6}
-noeuds_arcs <- tar_read(noeuds_arcs) # target pour fetch les df de noeuds et d'arcs utilisés par visNetwork
+noeuds_arcs <- tar_read(noeuds_arcs) # importer target pour fetch les df de noeuds et d'arcs utilisés par visNetwork
 #VisNetwork; en cliquant on peut voir le Cci
 
 visNetwork(nodes = noeuds_arcs[[1]], edges = noeuds_arcs[[2]]) %>% 
@@ -50,14 +49,133 @@ visNetwork(nodes = noeuds_arcs[[1]], edges = noeuds_arcs[[2]]) %>%
                             labelOnly = FALSE), # cacher les autres labels
              nodesIdSelection = TRUE)
 ```
-Puis, on fait référence à la Figure \ref{fig.plot1} dans le texte. 
+Puis, on fait référence à la Figure \ref{fig.plot1} dans le texte.
+
+# Méthodes
+Courte description
+
+```{R Tests de normalité des distributions de cci à travers les groupes}
+# H0: la variable cci suit une distribution normale
+df_noeuds_classe <- tar_read(df_noeuds_classe) # importer target du df des noeuds de la classe avec informations et cci
+
+df_noeuds_classe %>% group_by(form) %>% 
+  filter(form != "Inconnu") %>% # est-ce qu'on les retire ici ou plus loin??? Je dirais que oui -ame
+  shapiro_test(cci)
+
+df_noeuds_classe %>% group_by(annee)%>% 
+  filter(annee != "Inconnu") %>% 
+  shapiro_test(cci)
+
+df_noeuds_classe %>% group_by(regime) %>% 
+  filter(regime != "Inconnu") %>% 
+  shapiro_test(cci) 
+
+# le cci est normalement distribuée à travers tous les groupes, sauf les inconnus.
+# Cela fait du sens, car les inconnus sont des gens de l'extérieur du cours et 
+# leur réseau est loin d'être complet.
+```
+
+```{R Test de Kruskal-Wallis}
+# H0: tous les groupes ont la même distribution de cci
+(form.stat <- df_noeuds_classe %>% filter(form != "Inconnu") %>% 
+    dunn_test(cci ~ form)) # NS
+
+(annee.stat <- df_noeuds_classe %>% filter(annee != "Inconnu") %>% 
+    dunn_test(cci ~ annee)) # SIGNIFICATIF
+
+(reg.stat <- df_noeuds_classe %>%filter(regime != "Inconnu") %>% 
+    dunn_test(cci ~ regime)) # NS
+```
 
 # Résultats
 Courte section
-3 figures incl. l'illustration du réseau
-```{r}
-# scripts pour les figures
+
+```{R Graphiques analyses statistiques}
+ggplot(df_noeuds_classe, aes(y = cci)) + 
+  geom_histogram(binwidth = 0.1, center=1) +
+  coord_flip() + 
+  theme_minimal()
+
+
+# CCi par formation préalable
+(cciForm.plot <- df_noeuds_classe %>% filter(form!="Inconnu") %>% 
+  ggplot(aes(x = form, y = cci)) +
+  geom_boxplot(aes(fill = form)) + geom_point(position="jitter") +
+  theme_light() +
+  theme(legend.position="none")+ # Hide legend
+  stat_pvalue_manual(form.stat,  
+                    label = "p.adj.signif", 
+                    tip.length = 0.01, 
+                    y.position = 2.2, 
+                    step.increase = 0.06) + # Add stat test
+  labs(x = "Formation préalable", y = "Coefficient de regroupement",
+       title = "Distribution des coefficients de regroupement individuels par formation préalable."))
+
+
+# CCi par programme (coop vs régulier)
+(cciReg.plot <- df_noeuds_classe %>% filter(regime!="Inconnu") %>% 
+  ggplot(aes(x = regime, y = cci)) +
+  geom_boxplot(aes(fill = regime)) + geom_point(position="jitter") +
+  theme_light() +
+  theme(legend.position="none")+ # Hide legend
+  stat_pvalue_manual(reg.stat,  
+                     label = "p.adj.signif",
+                     y.position = 2.2) + # Add stat test
+  labs(x = "Régime regime", y = "Coefficient de regroupement",
+       title = "Distribution des coefficients de regroupement individuels par type de programme."))
+
+# CCi par session de début de bac
+(cciYr.plot <- df_noeuds_classe %>% filter(annee!="Inconnu") %>% 
+  ggplot(aes(x = annee, y = cci)) +
+  geom_boxplot(aes(fill = annee)) + geom_point(position="jitter") +
+  theme_light() +
+    theme(legend.position="none")+ # Hide legend
+    stat_pvalue_manual(annee.stat,  
+                       label = "p.adj.signif",
+                       y.position = 2.2) + # Add stat test
+    labs(x = "Première session", y = "Coefficient de regroupement",
+         title = "Distribution des coefficients de regroupement individuels par session de début de bac."))
+
 ```
+
+```{R "Tester normalité de la distribution de densité", eval=FALSE}
+# Distribution de la densité
+ggplot(k, aes(y = n)) + 
+  geom_histogram(bins = length(unique(k$n)),
+                 center=1) +
+  coord_flip() + 
+  theme_minimal() +
+  labs(title = "Distribution du nombre de personnes collaboratrices par personne étudiante",
+       y = "Nombre de personnes collaboratrices", x = "Fréquence")
+
+# Cette distribution est-elle normale?
+shapiro_test(k,n) # nope.
+```
+
+```{R "Visualisation du réseau en fonction de l'année de début",eval=FALSE}
+net <- tar_read(network)
+
+set.seed(2); ggnet2(net, color="annee", palette='Set2', 
+                    edge.color="colWeight", 
+                    edge.size = "sizeWeight",
+                    size=5, node.alpha = "aNA_start")
+
+set.seed(2); ggnet2(net, color="prog", palette='Spectral', 
+                    edge.color="colWeight", 
+                    edge.size = "sizeWeight",
+                    size=5, node.alpha = "aNA_prog")
+
+set.seed(2); ggnet2(net, color="form", palette='Pastel2', 
+                    edge.color="colWeight", 
+                    edge.size = "sizeWeight",
+                    size=5, node.alpha = "aNA_form")
+
+set.seed(2); ggnet2(net, color="regime", palette='Dark2', 
+                    edge.color="colWeight", 
+                    edge.size = "sizeWeight",
+                    size=5, node.alpha = "aNA_regime")
+```
+
 
 # Discussion
 doit inclure des citations de la littérature (peut-être en lien avec les limitations de nos méthodes, et des parallèles avec la littérature sur les réseaux écologiques)

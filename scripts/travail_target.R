@@ -440,24 +440,19 @@ cci_fun <- function (matrice_adj) {
   return(cci)
 }
 
-# ################################################################################
-# #### Fonction création du df de données utilisé pour ###########################
-# #### tester hypothèses et produire graphiques ##################################
-# ################################################################################
+# ##############################################################################
+# #### Fonction création du df des noeuds (tous les étudiants) avec cci et #####
+# #### informations utilisées pour tester hypothèses et produire graphiques ####
+# ##############################################################################
 
-noeuds_fun <- function (dbpath,df_cci) {
+noeuds_tous_fun <- function (dbpath,df_cci) {
   con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
   # Création d'un df des étudiants (noeuds) et de leurs données utiles pour tester 
   #les hypothèses et produire les figures
-  df_noeuds <- dbGetQuery(con,"
+  df_noeuds_tous <- dbGetQuery(con,"
                          SELECT ID, formation_prealable, regime_coop, programme, annee_debut 
-                         FROM etudiants
-                         WHERE formation_prealable IS NOT NULL 
-                         OR regime_coop IS NOT NULL 
-                         OR programme IS NOT NULL 
-                         OR annee_debut IS NOT NULL;") # Conserver seulement les étudiants ayant
-                                                       #au moins une des quatre variables d'intérêt
-  df_noeuds <- left_join(df_noeuds,df_cci, by="ID") %>% # ajouter le CCi
+                         FROM etudiants") 
+  df_noeuds_tous <- left_join(df_noeuds_tous,df_cci, by="ID") %>% # ajouter le CCi
     
     # Formater les variables pour des catégories pertinentes et des figures propres
     mutate(annee = case_when(is.na(annee_debut) ~ "Inconnu",
@@ -472,14 +467,28 @@ noeuds_fun <- function (dbpath,df_cci) {
                             TRUE ~ formation_prealable), .keep="unused") %>% 
     mutate_if(is.character,as.factor) %>% ungroup
   dbDisconnect(con) # Déconnexion de la db
-  return(df_noeuds)
+  return(df_noeuds_tous)
+}
+
+# ##############################################################################
+# #### Fonction sélection des noeuds de la classe du df des noeuds #############
+# ##############################################################################
+
+noeuds_classe_fun <- function (df_noeuds_tous) {
+  # Conserver seulement les étudiants ayant au moins une des quatre variables d'intérêt
+  df_noeuds_classe <- df_noeuds_tous %>% mutate_if(is.factor,as.character) %>% dplyr::filter(
+                    form!="Inconnu" |
+                    annee!="Inconnu" |
+                    regime!="Inconnu" |
+                    prog!="Inconnu")
+  return(df_noeuds_classe)
 }
 
 # ################################################################################
 # #### Fonction création des statistiques descriptives du réseau #################
 # ################################################################################
 
-stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds,df_cci,matrice_adj) {
+stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) {
   con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
   # Distribution de la densité
   mean <- mean(arcs$n) # en moyenne 1.95 collaborations par paire d'étudiants
@@ -493,11 +502,11 @@ stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds,df_cci,matrice_adj) {
   
   # On peut mieux l'estimer en utilisant seulement les étudiants du cours, car 
   # théoriquement toutes les interactions 
-  L_core <- inner_join(x = arcs, y = df_noeuds, 
+  L_core <- inner_join(x = arcs, y = df_noeuds_classe, 
                         by = join_by(etudiant1 == ID)) %>% 
-                        dplyr::filter(etudiant2 %in% df_noeuds$ID) %>% # Conserver uniquement interactions entre 2 étudiants du cours
+                        dplyr::filter(etudiant2 %in% df_noeuds_classe$ID) %>% # Conserver uniquement interactions entre 2 étudiants du cours
                         nrow
-  S_core <- df_noeuds %>% nrow
+  S_core <- df_noeuds_classe %>% nrow
   densite_core <- L_core/S_core # Mieux estimée, car on calcule par étudiant ayant 
   # des données complètes (ou presque)
   
@@ -537,7 +546,7 @@ stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds,df_cci,matrice_adj) {
 # #### Fonction création de l'object network utilisé pour le graphique du réseau #######
 # ######################################################################################
 
-network_fun <- function (arcsUniq,df_noeuds) {
+network_fun <- function (arcsUniq,df_noeuds_classe) {
   # Créer l'objet network à partir de arcsUniq
   net = network(arcsUniq[,1:2] %>% as.matrix, 
                 directed = FALSE) 
@@ -547,14 +556,14 @@ network_fun <- function (arcsUniq,df_noeuds) {
   str_vec <- arcsUniq$n %>% max %>% colfunc
   
   # Network ne travaille pas bien avec les facteurs, on retourne en charactères
-  df_noeuds <- df_noeuds %>% 
+  df_noeuds_classe <- df_noeuds_classe %>% 
     mutate_if(is.factor, as.character)
   
   # Ajouter les variables pertinentes au network:
-  net %v% "regime" = df_noeuds %$% regime 
-  net %v% "form" = df_noeuds %$% form
-  net %v% "annee" = df_noeuds %$% annee
-  net %v% "prog" = df_noeuds %$% prog
+  net %v% "regime" = df_noeuds_classe %$% regime 
+  net %v% "form" = df_noeuds_classe %$% form
+  net %v% "annee" = df_noeuds_classe %$% annee
+  net %v% "prog" = df_noeuds_classe %$% prog
   
   # Vecteur de poids pour gradient de couleur :
   net %e% "colWeight" <- str_vec[arcsUniq$n]
@@ -563,16 +572,16 @@ network_fun <- function (arcsUniq,df_noeuds) {
   net %e% "sizeWeight" <- (arcsUniq$n/(max(arcsUniq$n)))^0.6
   
   # vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
-  net %v% "aNA_start" <- df_noeuds %>% 
+  net %v% "aNA_start" <- df_noeuds_classe %>% 
     mutate(n=case_when(annee=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
   
-  net %v% "aNA_form" <- df_noeuds %>% 
+  net %v% "aNA_form" <- df_noeuds_classe %>% 
     mutate(n=case_when(form=="Inconnu" ~ 0.2, TRUE ~ 1)) %$% n
   
-  net %v% "aNA_regime" <- df_noeuds %>% 
+  net %v% "aNA_regime" <- df_noeuds_classe %>% 
     mutate(n=case_when(regime=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
   
-  net %v% "aNA_prog" <- df_noeuds %>% 
+  net %v% "aNA_prog" <- df_noeuds_classe %>% 
     mutate(n=case_when(prog=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
 }
 
@@ -581,10 +590,10 @@ network_fun <- function (arcsUniq,df_noeuds) {
 # #### pour le graphique interactif avec VisNetwork ############################
 # ##############################################################################
 
-noeuds_arcs_fun <- function (df_noeuds,arcs) {
+noeuds_arcs_fun <- function (df_noeuds_tous,arcs) {
   # Créer un df des noeuds du réseau (étudiants)
-  vNodes <- data.frame(id=sort(df_noeuds$ID), 
-                       label=sort(df_noeuds$ID), 
+  vNodes <- data.frame(id=sort(df_noeuds_tous$ID), 
+                       label=sort(df_noeuds_tous$ID), 
                        color = "#B3E2CD")
   
   # Créer un df des arcs du réseau

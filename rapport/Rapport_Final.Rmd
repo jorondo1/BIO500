@@ -1,21 +1,19 @@
 ---
 title: "Caractérisation d'un réseau de collaboration d'étudiants en biologie."
-author: 
-  - name : "Amélie Harbeck-Bastien" 
-    affiliation : "a"
-  - name : "Samuel Fortin"
-    affiliation : "a"
-  - name : "Jonathan Rondeau-Leclaire"
-    affiliation : "a"
-address :
-  - code: "a"
-    address : "Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université, Sherbrooke, Québec, J1K 2R1"
-    
-abstract: |
-  Lorem ipsum
-    
+author:
+- name: "Amélie Harbeck-Bastien"
+  affiliation: a
+- name: Samuel Fortin
+  affiliation: a
+- name: "Jonathan Rondeau-Leclaire"
+  affiliation: a
 date: "`r Sys.Date()`"
-bibliography : bibliographie.bib
+abstract: "Lorem ipsum\n  \n"
+address:
+- code: a
+  address: Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université,
+    Sherbrooke, Québec, J1K 2R1
+bibliography: bibliographie.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -31,7 +29,15 @@ __TOTAL DU TEXTE : 1000 à 1500 mots (excl. code)__
 # Résumé
 
 # Introduction
-Court, expliquer nos questions
+
+En écologie, le concept de réseau écologique fait principalement référence aux interactions entre les espèces d'un environnement particulier, ainsi qu'aux interactions des ces espèces avec cet environnement. Ces interactions sont, de manière naturelle, sélectionnées pour le maintient de l'équilibre des écosystèmes en favorisant leur fonctionnement (SOURCE).
+
+Dans une optique d'évaluer si ce concept naturel peut être appliqué aux humains, la présente expérience tente de mesurer si les interactions entre étudiants universitaires s'apparentent aux interactions retrouvées dans un réseau écologique naturel. 
+
+Ainsi, la question principale de l'étude est : "Est-ce que des regroupements d'étudiants (clics) collaborants plus fréquemment que d'autres se retrouvent parmis le groupe?". Dans le cas d'une réponse affirmative, la question secondaire est la suivante : "Quelles caractéristiques propres à chaque étudiant mène à la formation de regroupements spécifiques?".
+
+Avant de débuter les analyses, il est pertinent d'observer dans la figure 1 (RÉFÉRENCE), soit une représentation interactive des interactions entre étudiants au baccalauréat (BAC) en biologie, qu'une distinction visuelle de regroupements n'est pas aisée..... 
+
 
 Présenter notre réseau. 
 ```{r figure interactive du reseau, fig.capp="\\label{fig:plot1}Légende figure", fig.width=7, fig.height=6}
@@ -55,10 +61,21 @@ Puis, on fait référence à la Figure \ref{fig.plot1} dans le texte.
 Courte description
 
 - Collecte de données 
+Les données permettant les prochaines analyses proviennent d'un échantillonnage composite de 10 groupes d'étudiants présents au cours "Méthodes en écologie computationnelle - BIO 500", dans le cadre de leur baccalauréat en biologie, pour un total de XXXXXX étudiants. Chaque interaction, soit chaque fois que deux étudiants ont travaillés en équipe lors d'un projet au cours de leur parcours universitaire, a été compilée en fonction du cours concerné. Les interactions avec des étudiants en dehors du cours BIO 500 sont également présentes dans les données afin d'obtenir le nombre réel d'interaction des étudiants en BIO 500. Afin d'établir des possibles relations entre les membres du cours, la région administrive de provenance de l'étudiant, sa participation ou non au régime coop, sa formation prélable, son année de début au baccalauréat et son sous programme en biologie ont été compilés pour chaque étudiant de BIO 500.      
+
 - Nettoyage des données 
+L'échantillon de données composites des 10 groupes du cours a par la suite dû être nettoyé et homogénéisé afin d'éviter tous biais dans les analyses subséquentes dû à des doublons via des fautes d'ortographes, à des données manquantes ou erronnées ou encore à cause de l'insertion de symboles causant des problèmes.    
+
 - Sélection du noyau de la classe
+Ayant comme objectif d'identifier les principaux regroupements au sein cours, il a été décider de cibler l'analyse des données uniquement sur les étudiants de BIO 500. Pour ce faire, les interactions avec les étudiants externes ont été enlevés pour ne conserver que les données du "noyau" de la classe, surnommé "core" dans nos codes de programmation.  
+
 - Liste packages utilisés avec leur utilisation (tests stats + graphiques)
+Les principaux "packages" R utilisés pour l'obtention des analyses statistiques et des figures sont (À L'AIDE JO !!! :P): pacman, tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr, RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr, visNetwork et gridExtra. 
+
+
 - Description des tests statistiques
+En premier lieu, les données ont été séparées selon les caractéristiques distinguant chaque individu, soit la participation au régime COOP ou régulier, la formation préalable ou l'année de début du BAC. Les autres caractéristiques n'ont pas été analysés, car le sous-programme de biologie possédait une trop faible variance des données, tandis que trop peu d'étudiants provenaient de régions similaires pour effectuer des regrouprements selon ce critère. Ensuite, la normalité de la distribution des coefficients de regroupement individuel(CCi), soit le nombre d'interactions entre étudiants ayant collaborés avec un même étudiant commun, a été testée via un test de Shapiro-Wilk, et ce en prenant seulement en compte les étudiants du cours BIO 500. Un test de Dunn a ensuite été réalisé afin de déceler si une caractéristique particulière semblait former des clics et dans la positive, qu'elles étaient ces caractéristiques. Le tout à l'aide du logiciel R studio (SOURCE). 
+
 
 
 ```{R Tests de normalité des distributions de cci à travers les groupes}

@@ -33,7 +33,7 @@ list(
     cci_fun(matrice_adj=matrice_adj)
   ),
   tar_target(
-    df_noeuds_tous, # Cible pour le df de tous noeuds avec informations utiles
+    df_noeuds_tous, # Cible pour le df de tous noeuds avec informations utiles et cci
     noeuds_tous_fun(dbpath=dbpath,df_cci=df_cci)
   ),
   tar_target(

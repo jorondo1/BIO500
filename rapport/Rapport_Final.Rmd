@@ -54,12 +54,19 @@ Puis, on fait référence à la Figure \ref{fig.plot1} dans le texte.
 # Méthodes
 Courte description
 
+- Collecte de données 
+- Nettoyage des données 
+- Sélection du noyau de la classe
+- Liste packages utilisés avec leur utilisation (tests stats + graphiques)
+- Description des tests statistiques
+
+
 ```{R Tests de normalité des distributions de cci à travers les groupes}
 # H0: la variable cci suit une distribution normale
 df_noeuds_classe <- tar_read(df_noeuds_classe) # importer target du df des noeuds de la classe avec informations et cci
 
 df_noeuds_classe %>% group_by(form) %>% 
-  filter(form != "Inconnu") %>% # est-ce qu'on les retire ici ou plus loin??? Je dirais que oui -ame
+  filter(form != "Inconnu") %>% # Les inconnus sont retirés car ils ne seront pas utilisés dans les tests statistiques suivants
   shapiro_test(cci)
 
 df_noeuds_classe %>% group_by(annee)%>% 
@@ -70,12 +77,10 @@ df_noeuds_classe %>% group_by(regime) %>%
   filter(regime != "Inconnu") %>% 
   shapiro_test(cci) 
 
-# le cci est normalement distribuée à travers tous les groupes, sauf les inconnus.
-# Cela fait du sens, car les inconnus sont des gens de l'extérieur du cours et 
-# leur réseau est loin d'être complet.
+# le cci est normalement distribuée à travers tous les groupes lorsque les inconnus sont retirés.
 ```
 
-```{R Test de Kruskal-Wallis}
+```{R Test de Dunn}
 # H0: tous les groupes ont la même distribution de cci
 (form.stat <- df_noeuds_classe %>% filter(form != "Inconnu") %>% 
     dunn_test(cci ~ form)) # NS
@@ -91,11 +96,6 @@ df_noeuds_classe %>% group_by(regime) %>%
 Courte section
 
 ```{R Graphiques analyses statistiques}
-ggplot(df_noeuds_classe, aes(y = cci)) + 
-  geom_histogram(binwidth = 0.1, center=1) +
-  coord_flip() + 
-  theme_minimal()
-
 
 # CCi par formation préalable
 (cciForm.plot <- df_noeuds_classe %>% filter(form!="Inconnu") %>% 
@@ -138,42 +138,16 @@ ggplot(df_noeuds_classe, aes(y = cci)) +
 
 ```
 
-```{R "Tester normalité de la distribution de densité", eval=FALSE}
-# Distribution de la densité
-ggplot(k, aes(y = n)) + 
-  geom_histogram(bins = length(unique(k$n)),
-                 center=1) +
-  coord_flip() + 
-  theme_minimal() +
-  labs(title = "Distribution du nombre de personnes collaboratrices par personne étudiante",
-       y = "Nombre de personnes collaboratrices", x = "Fréquence")
 
-# Cette distribution est-elle normale?
-shapiro_test(k,n) # nope.
-```
-
-```{R "Visualisation du réseau en fonction de l'année de début",eval=FALSE}
+```{R "Visualisation du réseau en fonction de l'année de début"}
 net <- tar_read(network)
 
-set.seed(2); ggnet2(net, color="annee", palette='Set2', 
+set.seed(3)
+
+ggnet2(net, color="annee", palette='Set2', 
                     edge.color="colWeight", 
                     edge.size = "sizeWeight",
                     size=5, node.alpha = "aNA_start")
-
-set.seed(2); ggnet2(net, color="prog", palette='Spectral', 
-                    edge.color="colWeight", 
-                    edge.size = "sizeWeight",
-                    size=5, node.alpha = "aNA_prog")
-
-set.seed(2); ggnet2(net, color="form", palette='Pastel2', 
-                    edge.color="colWeight", 
-                    edge.size = "sizeWeight",
-                    size=5, node.alpha = "aNA_form")
-
-set.seed(2); ggnet2(net, color="regime", palette='Dark2', 
-                    edge.color="colWeight", 
-                    edge.size = "sizeWeight",
-                    size=5, node.alpha = "aNA_regime")
 ```
 
 

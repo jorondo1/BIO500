@@ -484,9 +484,9 @@ noeuds_classe_fun <- function (df_noeuds_tous) {
   return(df_noeuds_classe)
 }
 
-# ################################################################################
-# #### Fonction création des statistiques descriptives du réseau #################
-# ################################################################################
+# ##############################################################################
+# #### Fonction création des statistiques descriptives du réseau ###############
+# ##############################################################################
 
 stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) {
   con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
@@ -510,7 +510,7 @@ stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) 
   densite_core <- L_core/S_core # Mieux estimée, car on calcule par étudiant ayant 
   # des données complètes (ou presque)
   
-  m_core <- S_core*(S_core-1)/2
+  m_core <- S_core*(S_core-1)/2 # nombre d'interactions possibles dans un réseau des étudiants du cours unipartite simple non-dirigé
   C0_core <- L_core/m_core 
   # environ 43% des interactions potentielles réalisées entre les gens du cours!
   
@@ -559,11 +559,8 @@ network_fun <- function (arcsUniq,df_noeuds_classe) {
   df_noeuds_classe <- df_noeuds_classe %>% 
     mutate_if(is.factor, as.character)
   
-  # Ajouter les variables pertinentes au network:
-  net %v% "regime" = df_noeuds_classe %$% regime 
-  net %v% "form" = df_noeuds_classe %$% form
+  # Ajouter la variable annee aux noeuds
   net %v% "annee" = df_noeuds_classe %$% annee
-  net %v% "prog" = df_noeuds_classe %$% prog
   
   # Vecteur de poids pour gradient de couleur :
   net %e% "colWeight" <- str_vec[arcsUniq$n]
@@ -573,16 +570,9 @@ network_fun <- function (arcsUniq,df_noeuds_classe) {
   
   # vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
   net %v% "aNA_start" <- df_noeuds_classe %>% 
-    mutate(n=case_when(annee=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+    mutate(n=case_when(annee=="Inconnu" ~ 0.3, TRUE ~ 1)) %$% n
   
-  net %v% "aNA_form" <- df_noeuds_classe %>% 
-    mutate(n=case_when(form=="Inconnu" ~ 0.2, TRUE ~ 1)) %$% n
-  
-  net %v% "aNA_regime" <- df_noeuds_classe %>% 
-    mutate(n=case_when(regime=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
-  
-  net %v% "aNA_prog" <- df_noeuds_classe %>% 
-    mutate(n=case_when(prog=="Inconnu" ~ 0.5, TRUE ~ 1)) %$% n
+  return(net)
 }
 
 # ##############################################################################
@@ -605,47 +595,4 @@ noeuds_arcs_fun <- function (df_noeuds_tous,arcs) {
 }
 
 
-
-
-
-
-
-
-
-
-# ### Créer un fichier csv du nombre de liens par étudiant
-# dbGetQuery(con,
-#            "SELECT COUNT(etudiant1) AS nbr_liens, etudiant1 AS etudiant
-#   FROM collaborations
-#   GROUP BY etudiant1
-# ;") %>% write.csv2(.,"resultats/liens_etudiants.csv",row.names=FALSE)
-# 
-# ### Créer un fichier csv du nombre de liens par paire d'étudiants
-# dbGetQuery(con,
-#            "SELECT etudiant1, etudiant2, COUNT(etudiant1) AS nbr_liens
-#            FROM collaborations
-#            GROUP BY etudiant1, etudiant2
-# ;") %>% write.csv2(.,"resultats/liens_paires_etudiants.csv",row.names=FALSE)
-# 
-# ### Déterminer le nombre d'étudiants
-# nbr_etudiants <- dbGetQuery(con,
-#                             "SELECT COUNT(ID) AS Nbr_etudiants
-#                             FROM etudiants
-# ;")
-# 
-# ### Déterminer le nombre de liens entre les étudiants
-# nbr_liens <- dbGetQuery(con,
-#                         "SELECT COUNT(etudiant1) AS nbr_liens
-#                         FROM collaborations
-# ;")
-# 
-# ### Déterminer la connectance (nbr liens observés/nbr de liens possibles)
-# connectance <- nbr_liens/(nbr_etudiants*(nbr_etudiants-1)/2)
-# 
-# ### Déterminer le nombre moyen de liens par étudiant 
-# liens_etudiants <-read.csv2("resultats/liens_etudiants.csv")
-# nbr_liens_moy <- liens_etudiants$nbr_liens %>% mean
-# 
-# ### Déterminer la variance du nbr de liens moyens par étudiant
-# sd_liens <- liens_etudiants$nbr_liens %>% sd
 

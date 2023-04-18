@@ -391,7 +391,7 @@ createdb.fun <- function(clean_data) {
 # #### Fonction création df des arcs avec poids ##################################
 # ################################################################################
 
-collab_poids_fun <- function(dbpath) {
+collab_poids.fun <- function(dbpath) {
   
   ### Créer un df des arcs pour la matrice de réseau avec poids 
       #(1 arc pour chaque paire d'étudiants et le poids représente le nbr de collab)
@@ -419,7 +419,7 @@ collab_poids_fun <- function(dbpath) {
 # #### Fonction création matrice d'adjacence avec poids ##########################
 # ################################################################################
 
-matrice_fun <- function (arcs) {
+matrice.fun <- function (arcs) {
   ### Calculer la matrice d'adjacence avec poids, où le poids représente
   # le nombre de fois que deux étudiants ont travaillé ensemble
   adjPoids <- list2dist(arcs) %>% 
@@ -432,7 +432,7 @@ matrice_fun <- function (arcs) {
 # #### Fonction création df du cci pour chaque etudiants #########################
 # ################################################################################
 
-cci_fun <- function (matrice_adj) {
+cci.fun <- function (matrice_adj) {
   # Calculer le CCi pour tous les noeuds
   cci <- clustcoeff(matrice_adj, weighted=TRUE) %$% CCi %>% 
     data.frame(cci = .) %>% 
@@ -445,7 +445,7 @@ cci_fun <- function (matrice_adj) {
 # #### informations utilisées pour tester hypothèses et produire graphiques ####
 # ##############################################################################
 
-noeuds_tous_fun <- function (dbpath,df_cci) {
+noeuds_tous.fun <- function (dbpath,df_cci) {
   con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
   # Création d'un df des étudiants (noeuds) et de leurs données utiles pour tester 
   #les hypothèses et produire les figures
@@ -474,7 +474,7 @@ noeuds_tous_fun <- function (dbpath,df_cci) {
 # #### Fonction sélection des noeuds de la classe du df des noeuds #############
 # ##############################################################################
 
-noeuds_classe_fun <- function (df_noeuds_tous) {
+noeuds_classe.fun <- function (df_noeuds_tous) {
   # Conserver seulement les étudiants ayant au moins une des quatre variables d'intérêt
   df_noeuds_classe <- df_noeuds_tous %>% mutate_if(is.factor,as.character) %>% dplyr::filter(
                     form!="Inconnu" |
@@ -488,14 +488,10 @@ noeuds_classe_fun <- function (df_noeuds_tous) {
 # #### Fonction création des statistiques descriptives du réseau ###############
 # ##############################################################################
 
-stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) {
+stats.fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) {
   con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
-  # Distribution de la densité
-  mean <- mean(arcs$n) # en moyenne 1.95 collaborations par paire d'étudiants
-  sd <- sd(arcs$n) # ±2.50 
-  
   L <- arcsUniq %>% nrow # nombre d'intéractions au sein du réseau 
-  S <- dbGetQuery(con,"SELECT count(ID) FROM etudiants;") # nombre d'étudiants
+  S <- dbGetQuery(con,"SELECT count(ID) FROM etudiants;") %>% as.vector() %>% as.numeric() # nombre d'étudiants
   densite <- L/S # Moyenne d'interactions par etudiant (sous estimée)
   m <-  S*(S-1)/2 # nombre d'interactions possibles dans un réseau unipartite simple non-dirigé
   C0 <- L/m # environ 5.7 %; sous-estimée, car les interactions entre étudiants hors-cours ne sont pas toutes comptabilisées
@@ -514,39 +510,17 @@ stats_fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) 
   C0_core <- L_core/m_core 
   # environ 43% des interactions potentielles réalisées entre les gens du cours!
   
-  # Calculer le nombre d'arcs par personne
-  k <- arcs %>% 
-    group_by(etudiant1) %>% # varie légèrement si on utilise etudiant2, erreurs de saisie (devrait être symétrique)
-    summarise(n=n())
-  
-  # Calculer le diamètre avec iGraph
-  d <- graph_from_adjacency_matrix(matrice_adj, 
-                                   mode = 'undirected',
-                                   weighted = TRUE) %>% 
-    simplify %>% 
-    diameter(directed = FALSE) # 13
   dbDisconnect(con) # Déconnexion de la db
-  return(list(mean=mean,
-              sd=sd,
-              L=L,
-              S=S,
-              densite=densite,
-              m=m,
-              C0=C0,
-              L_core=L_core,
-              S_core=S_core,
-              densite_core=densite_core,
-              m_core=m_core,
-              C0_core=C0_core,
-              k=k,
-              d=d))
+  df_stats <- data.frame(tous=c(L,S,densite,m,C0),noyau=c(L_core,S_core,densite_core,m_core,C0_core))
+  rownames(df_stats) <-c("Nombre d'interactions (L)","Nombre d'étudiants (S)","Densité du réseau (L/S)","Nombre d'interactions possibles au sein du réseau","Connectance du réseau")
+  return(df_stats)
 } 
 
 # ######################################################################################
 # #### Fonction création de l'object network utilisé pour le graphique du réseau #######
 # ######################################################################################
 
-network_fun <- function (arcsUniq,df_noeuds_classe) {
+network.fun <- function (arcsUniq,df_noeuds_classe) {
   # Créer l'objet network à partir de arcsUniq
   net = network(arcsUniq[,1:2] %>% as.matrix, 
                 directed = FALSE) 
@@ -580,7 +554,7 @@ network_fun <- function (arcsUniq,df_noeuds_classe) {
 # #### pour le graphique interactif avec VisNetwork ############################
 # ##############################################################################
 
-noeuds_arcs_fun <- function (df_noeuds_tous,arcs) {
+noeuds_arcs.fun <- function (df_noeuds_tous,arcs) {
   # Créer un df des noeuds du réseau (étudiants)
   vNodes <- data.frame(id=sort(df_noeuds_tous$ID), 
                        label=sort(df_noeuds_tous$ID), 

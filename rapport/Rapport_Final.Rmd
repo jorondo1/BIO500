@@ -23,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(pacman)
 p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
        RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr,
-       visNetwork,gridExtra)
+       visNetwork,gridExtra,knitr)
 ```
 
 __TOTAL DU TEXTE : 1000 à 1500 mots (excl. code)__
@@ -34,7 +34,8 @@ __TOTAL DU TEXTE : 1000 à 1500 mots (excl. code)__
 Court, expliquer nos questions
 
 Présenter notre réseau. 
-```{r figure interactive du reseau, fig.capp="\\label{fig:plot1}Légende figure", fig.width=7, fig.height=6}
+
+```{r Reseau interactif, fig.cap="\\label{fig:plot1} Réseau de collaboration entre les étudiants de la classe du cours BIO500 à l'Université de Sherbrooke à l'hiver 2023.", fig.width=7, fig.height=6}
 noeuds_arcs <- tar_read(noeuds_arcs) # importer target pour fetch les df de noeuds et d'arcs utilisés par visNetwork
 #VisNetwork; en cliquant on peut voir le Cci
 
@@ -49,7 +50,8 @@ visNetwork(nodes = noeuds_arcs[[1]], edges = noeuds_arcs[[2]]) %>%
                             labelOnly = FALSE), # cacher les autres labels
              nodesIdSelection = TRUE)
 ```
-Puis, on fait référence à la Figure \ref{fig.plot1} dans le texte.
+
+Puis, on fait référence à la Figure \ref{fig:plot1} dans le texte.
 
 # Méthodes
 Courte description
@@ -60,6 +62,18 @@ Courte description
 - Liste packages utilisés avec leur utilisation (tests stats + graphiques)
 - Description des tests statistiques
 
+
+
+
+# Résultats
+Courte section
+
+```{R tab1, tab.cap="\\label{tab:tab1} Informations générales du réseau global et du sous-réseau du noyau des étudiants de la classe."}
+df_stats <- tar_read(df_stats)
+kable(x=df_stats,format="html",digits=2,align="c", col.names=c("Tous les étudiants","Noyau de la classe"), caption="Informations générales du réseau global et du sous-réseau du noyau des étudiants de la classe",table.attr = "style='width:100%;'")
+```
+
+Dans le texte je peux réféfer à la table \ref{tab:tab1}. Mais ça marche po hihi
 
 ```{R Tests de normalité des distributions de cci à travers les groupes}
 # H0: la variable cci suit une distribution normale
@@ -91,9 +105,6 @@ df_noeuds_classe %>% group_by(regime) %>%
 (reg.stat <- df_noeuds_classe %>%filter(regime != "Inconnu") %>% 
     dunn_test(cci ~ regime)) # NS
 ```
-
-# Résultats
-Courte section
 
 ```{R Graphiques analyses statistiques}
 
@@ -137,7 +148,6 @@ Courte section
          title = "Distribution des coefficients de regroupement individuels par session de début de bac."))
 
 ```
-
 
 ```{R "Visualisation du réseau en fonction de l'année de début"}
 net <- tar_read(network)

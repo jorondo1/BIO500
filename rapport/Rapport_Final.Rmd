@@ -31,7 +31,7 @@ p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
 
 # Résumé
 
-Le concept de réseaux écologiques est bien implanté et étudié en écologie. Or,il serait intéressant d'évaluer si le degré de connectance entre les animaux d'un écosystème commun peut se comparer à celle d'humains lors d'un contexte déterminé. Pour ce faire, le coefficient de regroupement d'étudiants au baccalauréat (BAC) en biologie a servie à déterminer si, dans un contexte de collaborations lors de travaux d'équipes, les étudiants avaient tendance à former des regroupements spécifiques de manière fréquente au cours de leur parcours universitaire. Il en résulte un phénomène de regroupement plus prononcé selon l'année de début du BAC, démontrant ainsi qu'il existe une facteur lié à l'année d'entrée à l'université qui semble augmenter la valeur adaptative des étudiants dans cet environnement relativement stressant et compétitif.     
+Le concept de réseaux écologiques a été décrit et étudié en profondeur dans la littérature [@delmas_analysing_2019]. Or, il serait intéressant d'évaluer si les propriétés d'un réseau de collaboration humain dans un contexte académique peut se comparer à celles des réseaux écologiques. Pour ce faire, le coefficient de regroupement d'étudiants au baccalauréat (BAC) en biologie a servi à déterminer si, dans un contexte de collaborations lors de travaux d'équipes, les étudiants avaient tendance à former des regroupements spécifiques de manière fréquente au cours de leur parcours universitaire. Il en résulte un phénomène de regroupement plus prononcé selon l'année de début du BAC, démontrant ainsi qu'il existe une facteur lié à l'année d'entrée à l'université qui semble augmenter la valeur adaptative des étudiants dans cet environnement relativement stressant et compétitif.     
 
 # Introduction
 
@@ -39,12 +39,12 @@ En écologie, le concept de réseau écologique fait principalement référence 
 
 Dans une optique d'évaluer si ce concept naturel peut être appliqué aux humains, la présente expérience tente de mesurer si les interactions entre étudiants universitaires s'apparentent aux interactions retrouvées dans un réseau écologique naturel. 
 
-Ainsi, la question principale de l'étude est : "Est-ce que des regroupements d'étudiants (clics) collaborants plus fréquemment que d'autres se retrouvent parmis le groupe?". Dans le cas d'une réponse affirmative, la question secondaire est la suivante : "Quelles caractéristiques propres à chaque étudiant mène à la formation de regroupements spécifiques?".
+Ainsi, nous posons la question suivante : « Est-ce que des regroupements de personnes étudiantes (cliques) collaborant ensemble plus fréquemment qu'avec d'autres peuvent être identifiées dans le groupe du cours BIO500 ? ». Dans le cas d'une réponse affirmative, la question secondaire est la suivante : « Quelles caractéristiques propres à chaque étudiant mène à la formation de regroupements spécifiques? »
 
-Avant de débuter les analyses, il est pertinent d'observer la figure 1 (RÉFÉRENCE), dans laquelle les collaborations entre des étudiants aux baccalauréats (BAC) en biologie sont représentées par des lignes et les étudiants par un point unique. Une ligne épaisse indique un nombre total de collaborations plus élevé qu'une ligne mince. Il s'avère toutefois ardu d'utiliser cette figure pour déceler quelqu'onques regroupements. Les analyses présentées dans cette étude tentent ainsi de visualiser plus aisément les regroupements au sein d'un groupe d'étudiants universitaires. 
+La figure 1 (RÉFÉRENCE) permet de visualiser le réseau à l'étude de manière interactive, dans laquelle les collaborations entre des étudiants aux baccalauréats (BAC) en biologie sont représentées par des lignes et les étudiants par un point unique. Une ligne épaisse indique un nombre total de collaborations plus élevé qu'une ligne mince. Il s'avère toutefois ardu d'utiliser cette figure pour déceler quelconques regroupements. Les analyses présentées dans cette étude tentent ainsi de visualiser plus aisément les regroupements au sein d'un groupe d'étudiants universitaires. 
 
 
-```{r fig1, Reseau interactif, fig.cap="\\label{fig:fig1} Réseau de collaboration entre les étudiants de la classe du cours BIO500 à l'Université de Sherbrooke à l'hiver 2023.", fig.width=7, fig.height=6}
+```{r fig1, Reseau interactif, fig.cap="\\label{fig:fig1} Réseau de collaboration entre les étudiants de la classe du cours BIO500 à l'Université de Sherbrooke à l'hiver 2023.", fig.width=7, fig.height=6, echo=FALSE}
 noeuds_arcs <- tar_read(noeuds_arcs) # importer target pour fetch les df de noeuds et d'arcs utilisés par visNetwork
 #VisNetwork; en cliquant on peut voir le Cci
 
@@ -65,21 +65,27 @@ Puis, on fait référence à la Figure \ref{fig:plot1} dans le texte.
 # Méthodes
 Courte description
 
-- Collecte de données 
-Les données permettant les prochaines analyses proviennent d'un échantillonnage composite de 10 groupes d'étudiants présents au cours "Méthodes en écologie computationnelle - BIO 500", dans le cadre de leur baccalauréat en biologie, pour un total de XXXXXX étudiants. Chaque interaction, soit chaque fois que deux étudiants ont travaillés en équipe lors d'un projet au cours de leur parcours universitaire, a été compilée en fonction du cours concerné. Les interactions avec des étudiants en dehors du cours BIO 500 sont également présentes dans les données afin d'obtenir le nombre réel d'interaction des étudiants en BIO 500. Afin d'établir des possibles relations entre les membres du cours, la région administrive de provenance de l'étudiant, sa participation ou non au régime coop, sa formation prélable, son année de début au baccalauréat et son sous programme en biologie ont été compilés pour chaque étudiant de BIO 500.      
+## Collecte de données 
 
-- Nettoyage des données 
-L'échantillon de données composites des 10 groupes du cours a par la suite dû être nettoyé et homogénéisé afin d'éviter tous biais dans les analyses subséquentes dû à des doublons via des fautes d'ortographes, à des données manquantes ou erronnées ou encore à cause de l'insertion de symboles causant des problèmes.    
+Les données ont été récoltées par échantillonnage composite de 10 sous-groupes des personnes étudiantes participant au cours _Méthodes en écologie computationnelle - BIO500_, dans le cadre de leur baccalauréat en biologie, pour un total de 39 étudiants. Chaque interaction, soit chaque fois que deux étudiants ont travaillé en équipe lors d'un projet au cours de leur parcours universitaire, a été compilée en fonction du cours concerné. Les interactions avec des étudiants en dehors du cours BIO500 sont également présentes dans les données afin d'obtenir le nombre réel d'interaction des étudiants en BIO500. Cependant, les interactions entre personnes étudiantes de l'extérieur du cours ont seulement été compilées dans la mesure où elles ont eu elles ont eu lieu dans le cadre d'un travail d'équipe impliquant au moins une personne du cours BIO500. 
 
-- Sélection du noyau de la classe
-Ayant comme objectif d'identifier les principaux regroupements au sein cours, il a été décider de cibler l'analyse des données uniquement sur les étudiants de BIO 500. Pour ce faire, les interactions avec les étudiants externes ont été enlevés pour ne conserver que les données du "noyau" de la classe, surnommé "core" dans nos codes de programmation.  
+Afin d'établir des possibles relations entre les membres du cours, la région administrive de provenance de l'étudiant, sa participation ou non au régime coop, sa formation prélable (universitaire, préuniversitaire, ou technique), son semestre de début au baccalauréat (e.g., A2022) et son sous-programme de biologie ont été compilés pour chaque personne étudiante de BIO500.      
 
-- Liste packages utilisés avec leur utilisation (tests stats + graphiques)
-Les principaux "packages" R utilisés pour l'obtention des analyses statistiques et des figures sont (À L'AIDE JO !!! :P): pacman, tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr, RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr, visNetwork et gridExtra. 
+## Nettoyage des données 
+
+Les données brutes des 10 sous-groupes du cours ont par la suite dûes être nettoyées et homogénéisées afin d'éviter tous biais dans les analyses subséquentes. Les doublons not été retirés, les fautes d'ortographes, données manquantes ou erronnées corrigées, ainsi que certains caractères spéciaux manuellement corrigés.
+
+Le nettoyage des données a été réalisé dans R à l'aide de RStudio.  [@rstudio_rstudio_2023] Les figures ont été produites à l'aide des librairies network, visNetwork, igraph, kable, ggplot2 et NetworkToolbox.
 
 
-- Description des tests statistiques
-En premier lieu, les données ont été séparées selon les caractéristiques distinguant chaque individu, soit la participation au régime COOP ou régulier, la formation préalable ou l'année de début du BAC. Les autres caractéristiques n'ont pas été analysés, car le sous-programme de biologie possédait une trop faible variance des données, tandis que trop peu d'étudiants provenaient de régions similaires pour effectuer des regrouprements selon ce critère. Ensuite, la normalité de la distribution des coefficients de regroupement individuel (CCi), soit le nombre d'interactions entre étudiants ayant collaborés avec un même étudiant commun, a été testée via un test de Shapiro-Wilk, et ce en prenant seulement en compte les étudiants du cours BIO 500. Un test de Dunn a ensuite été réalisé afin de déceler si une caractéristique particulière semblait former des clics et dans la positive, qu'elles étaient ces caractéristiques. Il est à noter que lors du test de Dunn en fonction de l'année de début, l'année 2020 a été comparée à un regroupement des données de toutes les autres années, car ces dernières possédaient trop peu de représentants pour être comparées avec une puissance statistique suffisamment élevée. Le tout s'est effectué à l'aide du logiciel R studio [@rstudio_XXX_2023]. 
+## Sélection du noyau de la classe
+Ayant comme objectif d'identifier les principaux regroupements au sein cours, il a été décider de cibler l'analyse des données uniquement sur les étudiants de BIO500. Pour ce faire, les interactions avec les étudiants externes ont été enlevées pour ne conserver que les données du « noyau » de la classe, surnommé _core_ dans nos codes de programmation.
+
+## Analyses statistiques
+
+En premier lieu, les données ont été séparées selon les caractéristiques distinguant chaque individu, soit la participation au régime COOP ou régulier, la formation préalable ou l'année de début du BAC. Les autres caractéristiques n'ont pas été analysées, car le sous-programme de biologie possédait une trop faible variance des données, tandisque trop peu d'étudiants provenaient de régions similaires pour effectuer des tests statistiques intéressants selon ce critère. 
+
+La normalité de la distribution des coefficients de regroupement individuel (CCi), soit le nombre d'interactions entre personnes étudiantes ayant collaboré avec une même personne étudiante commune, a été testée via un test de Shapiro-Wilk pour les personnes étudiantes du cours BIO500. Un test de Dunn a ensuite été réalisé afin d'identifier les caractéristique particulières du parcours permettant de regrouper les personnes étudiantes par une distribution du CCi significativement différente. Ce test permet donc d'identifier des _cliques_ et la caractéristique de leur parcours qui les unit. Il est à noter que lors du test de Dunn en fonction de l'année de début, l'année 2020 a été comparée à un regroupement des données de toutes les autres années, car ces dernières possédaient trop peu de représentants pour être comparées avec une puissance statistique suffisamment élevée.
 
 
 # Résultats
@@ -198,7 +204,7 @@ Il est possible d'observer de manière évidente que les étudiants ayant début
 
 En sommes, pour répondre aux questions motivant l'étude, il y a en effet un phénomène de regroupement d'étudiants collaborants plus fréquemment comparativement à d'autres, et celui-ci semble prinpalement causé par l'année de début du parcours universitaire des étudiants. Il est d'ailleurs intéressant de remarquer que la figure 3 (REFERENCE), contrôlée par l'année de début, permet une visualisation plus aisée et évidente de ce phénomène qu'avec la figure 1 (REFERENCE).
 
-Il est possible de transposer ce phénomène en milieux naturels. Par exemple, le bouquetin des Alpes (*Alpine ibex*) est reconnu pour créer des associations préférentiellement en fonction de l'âge des individus de la population. Cela favoriserait leur valeur adaptative et diminuerait leurs confrontations avec les adultes de la population [@brambilla_long_2022]. Or, en prenant pour acquis que la majorité des étudiants du cours BIO 500 ont un parcours préuniversitaire similaire, il est fort probable que les étudiants ayant débuté en 2020 soient du même âge. Ces affiliations selon l'âge sont logiques biologiquement, car ces individus vivent des obstacles similaires, ont des changements d'hormones semblables et sont intimidés par les étudiants plus âgés, un peu comme un jeune bouquetin vis-à-vis des mâles dominants.   
+Il est possible de transposer ce phénomène en milieux naturels. Par exemple, le bouquetin des Alpes (*Alpine ibex*) est reconnu pour créer des associations préférentiellement en fonction de l'âge des individus de la population. Cela favoriserait leur valeur adaptative et diminuerait leurs confrontations avec les adultes de la population [@brambilla_long_2022]. Or, en prenant pour acquis que la majorité des étudiants du cours BIO500 ont un parcours préuniversitaire similaire, il est fort probable que les étudiants ayant débuté en 2020 soient du même âge. Ces affiliations selon l'âge sont logiques biologiquement, car ces individus vivent des obstacles similaires, ont des changements d'hormones semblables et sont intimidés par les étudiants plus âgés, un peu comme un jeune bouquetin vis-à-vis des mâles dominants.   
 
 
 ###Pas sur si on le met, sinon où le mettre. ###

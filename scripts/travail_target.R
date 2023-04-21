@@ -544,7 +544,7 @@ network.fun <- function (arcsUniq,df_noeuds_classe) {
   
   # vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
   net %v% "aNA_start" <- df_noeuds_classe %>% 
-    mutate(n=case_when(annee=="Inconnu" ~ 0.3, TRUE ~ 1)) %$% n
+    mutate(n=case_when(annee=="Inconnu" ~ 0.4, TRUE ~ 1)) %$% n
   
   return(net)
 }

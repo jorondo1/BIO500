@@ -1,10 +1,3 @@
-### Importer tous les packages nécessaires
-library(pacman)
-p_load(data.table, dplyr, GGally, ggpubr, Hmisc, igraph, magrittr, network, 
-       NetworkToolbox, purrr, RColorBrewer, readr, RSQLite, rstatix, 
-       stringdist, stringr, tibble, tidygraph, tidyr, 
-       spaa, visNetwork)
-
 ##########################···
 #### Contenu du script ####···
 ##########################···
@@ -18,7 +11,6 @@ p_load(data.table, dplyr, GGally, ggpubr, Hmisc, igraph, magrittr, network,
 #         Cohérence collaborations - cours
 #         Cohérence collaborations - étudiants
 # 03.Fonction création et injection de la bd
-# 04.Fonction création matrice de réseau
 
 ################################################################################
 #### 01.Fonctions importation des données ######################################
@@ -106,53 +98,53 @@ clean.fun <- function(data) {
   
   # Colonnes d'intérêt
   colEtudiant <- c("prenom_nom","prenom","nom","region_administrative",
-                    "regime_coop","formation_prealable","annee_debut","programme")
+                   "regime_coop","formation_prealable","annee_debut","programme")
   
   ### Retirer les caractères weird
   listEtudiant %<>% lapply(function(df) {
-   # retirer les points des noms de colonnes
-   names(df) <- sub("\\.", "", names(df))
-   # conserver seulement les colonnes d'intérêt
-   df <- df[, colEtudiant]
-   # remove "<a0>" from all columns
-   df[] <- lapply(df, function(col) gsub("<a0>", "", col))
-   return(df)
+    # retirer les points des noms de colonnes
+    names(df) <- sub("\\.", "", names(df))
+    # conserver seulement les colonnes d'intérêt
+    df <- df[, colEtudiant]
+    # remove "<a0>" from all columns
+    df[] <- lapply(df, function(col) gsub("<a0>", "", col))
+    return(df)
   })
   
   # colliger la liste en un seul df
   etu_tous <- rbindlist(listEtudiant) %>%
-   # prenom_nom devient ID, car cette variable sera utilisée comme identifiant unique
-   mutate(ID=prenom_nom, .keep="unused")
-    # # assigner NA aux cellules vides:
+    # prenom_nom devient ID, car cette variable sera utilisée comme identifiant unique
+    mutate(ID=prenom_nom, .keep="unused")
+  # # assigner NA aux cellules vides:
   etu_tous[etu_tous==""] <- NA
   # enlever les rangées sans identifiant:
   etu_tous %<>% drop_na(ID)
-    # # Création d'une matrice de dissimilarité pour comparer tous les noms ensemble
+  # # Création d'une matrice de dissimilarité pour comparer tous les noms ensemble
   # et identifier les plus similaires grâce à la distance Damerau-Levenshtein
   # pour trouver les fautes de frappe.
   etudiant_u <- etu_tous$ID %>% unique # liste unique de tous les étudiants
   dist <- etudiant_u %>% stringdistmatrix(.,.,method = "dl") # matrice de distance
-    # # Extraire la liste des noms
+  # # Extraire la liste des noms
   (prob <- etudiant_u[which(dist<5 & dist > 0, arr.ind=TRUE)[,1]] %>% sort %>% as.matrix)
   # Attention, certains noms sont simplement similaires et
   # n'ont pas besoin d'être remplacés!
-    # # On crée une liste des noms mal épelés
+  # # On crée une liste des noms mal épelés
   prob_unique <- c(
-   "amelie_harbeck-bastien", "ariane_barrette","cassandra_godin", "edouard_nadon-beaumier",
-   "francis_boily", "ihuoma_elsie_ebere", "jonathan_rondeau-leclaire", "kayla_trempe-kay",
-   "juliette_meilleur", "laurianne_plante", "louis-philippe_theriault", "mael_guerin",
-   "marie_bughin", "marie-christine_arseneau", "penelope_robert", "mia_carriere",
-   "philippe_barrette", "philippe_bourassa","sabrina_leclercq", "samuel_fortin",
-   "sara-jade_lamontagne", "yanick_sageau" )
+    "amelie_harbeck-bastien", "ariane_barrette","cassandra_godin", "edouard_nadon-beaumier",
+    "francis_boily", "ihuoma_elsie_ebere", "jonathan_rondeau-leclaire", "kayla_trempe-kay",
+    "juliette_meilleur", "laurianne_plante", "louis-philippe_theriault", "mael_guerin",
+    "marie_bughin", "marie-christine_arseneau", "penelope_robert", "mia_carriere",
+    "philippe_barrette", "philippe_bourassa","sabrina_leclercq", "samuel_fortin",
+    "sara-jade_lamontagne", "yanick_sageau" )
   
   # substitution fuzzy
   # cette loop imprime aussi les détails de la substitution pour s'assurer
   # que deux noms réellement similaires ne sont pas remplacés par le même nom
   for (i in prob_unique) {
-   toReplace <- agrep(i,etu_tous$ID, ignore.case = FALSE,
-                      max.distance = 2) # liste d'indices avec match fuzzy
-   print(c(etu_tous[toReplace,"ID"],i))
-   etu_tous[toReplace,"ID"] <- i # remplacer avec la bonne valeur
+    toReplace <- agrep(i,etu_tous$ID, ignore.case = FALSE,
+                       max.distance = 2) # liste d'indices avec match fuzzy
+    print(c(etu_tous[toReplace,"ID"],i))
+    etu_tous[toReplace,"ID"] <- i # remplacer avec la bonne valeur
   }
   
   # # Correction à la main d'un cas particulier
@@ -161,37 +153,37 @@ clean.fun <- function(data) {
   ### On décide d'enlever les colonnes nom et prénom car elles sont loin d'être
   ### essentielles et contiennent potentiellement aussi des erreurs.
   etu_tous %<>% select(-c(nom, prenom))%>%
-   mutate(countNA = rowSums(is.na(.))) %>% # somme des données NA par rangée
-   group_by(ID) %>% # groupement pour la prochaine étape
-   filter(countNA == min(countNA)) %>% # garder les rangées avec le plus de données
-   distinct(ID, # retirer les entrées dupliquées;
-            .keep_all=TRUE) %>% # les ambiguités sont sélectionnées arbitrairement
-   # Traduire tous les booléens en anglais:
-   mutate(regime_coop = case_when(
-     regime_coop =="VRAI" ~ "TRUE",
-     regime_coop == "FAUX" ~ "FALSE")) %>% dplyr::select(-countNA)
+    mutate(countNA = rowSums(is.na(.))) %>% # somme des données NA par rangée
+    group_by(ID) %>% # groupement pour la prochaine étape
+    filter(countNA == min(countNA)) %>% # garder les rangées avec le plus de données
+    distinct(ID, # retirer les entrées dupliquées;
+             .keep_all=TRUE) %>% # les ambiguités sont sélectionnées arbitrairement
+    # Traduire tous les booléens en anglais:
+    mutate(regime_coop = case_when(
+      regime_coop =="VRAI" ~ "TRUE",
+      regime_coop == "FAUX" ~ "FALSE")) %>% dplyr::select(-countNA)
   
   etu_tous$region_administrative %>% unique
   # Certaines régions administratives sont mal écrites!
   
   # Régions administratives du Québec:
   regAd <- c("monteregie", "saguenay-lac-saint-jean", "mauricie", "lanaudiere",
-            "estrie", "outaouais", "centre-du-quebec", "bas-saint-laurent",
-            "gaspesie_iles_de_la_madeleine", "montreal", "laurentides",
-            "abitibi-temiscamingue", "laval", "cote_nord", "nord_du_quebec",
-            "chaudiere_appalaches", "capitale-nationale")
+             "estrie", "outaouais", "centre-du-quebec", "bas-saint-laurent",
+             "gaspesie_iles_de_la_madeleine", "montreal", "laurentides",
+             "abitibi-temiscamingue", "laval", "cote_nord", "nord_du_quebec",
+             "chaudiere_appalaches", "capitale-nationale")
   
   # Boucle permettant de remplacer des erreurs de frappe mineures grâce au fuzzy match
   etu_corr <- etu_tous
   for (i in regAd) {
-   toReplace <- agrep(i,etu_corr$region_administrative) # liste d'indices avec match fuzzy
-   etu_tous[toReplace,"region_administrative"] <- i # remplacer avec la bonne valeur
+    toReplace <- agrep(i,etu_corr$region_administrative) # liste d'indices avec match fuzzy
+    etu_tous[toReplace,"region_administrative"] <- i # remplacer avec la bonne valeur
   }
   
   # Vérifier la valeur originale des données corrigées
   etu_tous[which(etu_tous$region_administrative !=
-                  etu_corr$region_administrative),
-          "region_administrative"] # c'était bel et bien une erreur!
+                   etu_corr$region_administrative),
+           "region_administrative"] # c'était bel et bien une erreur!
   
   # #####################···
   # ### COURS ############···
@@ -246,7 +238,7 @@ clean.fun <- function(data) {
   
   # Trouver les sigles présents dans cours, mais pas dans coll_tous:
   (orphelins <- unique(cours_tous$sigle)[unique(cours_tous$sigle) %nin%
-                                     unique(coll_tous$sigle)])
+                                           unique(coll_tous$sigle)])
   # Il y a 10 cours présents dans cours qui n'ont pas donné lieu a des coll_tous
   
   # Retirer les cours présents dans cours mais pas dans coll_tous
@@ -283,16 +275,16 @@ clean.fun <- function(data) {
   # On remplace les autres erreurs avec un fuzzy match :
   id <- etu_tous$ID
   for (i in id) {
-   toReplace <- agrepl(i, # ID à fuzzy-matcher
-                       coll_tous$etudiant1, # liste à chercher
-                       ignore.case = FALSE,
-                       max.distance = 0.07) # très sensible pour éviter de mélanger les noms similaires
-   coll_tous[toReplace,"etudiant1"] <- i # remplacer avec le bon ID
+    toReplace <- agrepl(i, # ID à fuzzy-matcher
+                        coll_tous$etudiant1, # liste à chercher
+                        ignore.case = FALSE,
+                        max.distance = 0.07) # très sensible pour éviter de mélanger les noms similaires
+    coll_tous[toReplace,"etudiant1"] <- i # remplacer avec le bon ID
   }
   # Une autre fois pour la colonne etudiant2
   for (i in id) {
-   toReplace <- agrepl(i,coll_tous$etudiant2, ignore.case = FALSE, max.distance = 0.07)
-   coll_tous[toReplace,"etudiant2"] <- i
+    toReplace <- agrepl(i,coll_tous$etudiant2, ignore.case = FALSE, max.distance = 0.07)
+    coll_tous[toReplace,"etudiant2"] <- i
   }
   
   # Ajouter les étudiants présents dans collaboration mais absents de etudiant
@@ -345,11 +337,11 @@ createdb.fun <- function(clean_data) {
     gc() # S'assurer que la connexion au fichier .db est fermée avant de supprimer le fichier 
     file.remove(dbPath, recursive=TRUE) # Supprimer le fichier db s'il existe déjà
   }
-
+  
   con <- dbConnect(SQLite(), dbname=dbPath) # Créer le fichier et la connexion à la db
   
   dbSendQuery(con,
-               "CREATE TABLE etudiants (
+              "CREATE TABLE etudiants (
      ID	VARCHAR(50) NOT NULL,
      region_administrative	VARCHAR(30),
      regime_coop BOOLEAN,
@@ -359,8 +351,8 @@ createdb.fun <- function(clean_data) {
      PRIMARY KEY (ID)
    );")
   
-   dbSendQuery(con,
-               "CREATE TABLE collaborations (
+  dbSendQuery(con,
+              "CREATE TABLE collaborations (
      etudiant1 VARCHAR(50) NOT NULL,
      etudiant2 VARCHAR(50) NOT NULL,
      session VARCHAR(5),
@@ -371,8 +363,8 @@ createdb.fun <- function(clean_data) {
      FOREIGN KEY (sigle) REFERENCES cours(sigle)
    );")
   
-   dbSendQuery(con,
-               "CREATE TABLE cours (
+  dbSendQuery(con,
+              "CREATE TABLE cours (
      sigle VARCHAR(6) NOT NULL,
      credits INT,
      PRIMARY KEY (sigle)
@@ -386,187 +378,3 @@ createdb.fun <- function(clean_data) {
   dbDisconnect(con)
   return(dbPath)
 }
-
-# ################################################################################
-# #### Fonction création df des arcs avec poids ##################################
-# ################################################################################
-
-collab_poids.fun <- function(dbpath) {
-  
-  ### Créer un df des arcs pour la matrice de réseau avec poids 
-      #(1 arc pour chaque paire d'étudiants et le poids représente le nbr de collab)
-  con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
-  ### Ce df contient les collaborations dans les deux sens
-  arcs <- dbGetQuery(con,
-                     "SELECT etudiant1, etudiant2, COUNT(sigle) AS n 
-                     FROM collaborations 
-                     GROUP BY etudiant1, etudiant2;") # compter les collabs
-    
-    # Pour travailler avec le package network, nous gardons seulement un arc par
-    # collaboration.
-    arcsUniq <- arcs %>% 
-      mutate(id = case_when(etudiant1<etudiant2 ~ paste0(etudiant1,"+",etudiant2),
-                            etudiant2<etudiant1 ~ paste0(etudiant2,"+",etudiant1))) %>% 
-      distinct(id, .keep_all=TRUE) %>% 
-      mutate_if(is.character, as.factor) # doivent être des facteurs pour certaines fonctions utilisées ultérieurement
-    
-    arcs %<>% mutate_if(is.character, as.factor) # doivent être des facteurs pour certaines fonctions utilisées ultérieurement
-    dbDisconnect(con) # Déconnexion de la db
-    return(list(arcs,arcsUniq))
-}
-
-# ################################################################################
-# #### Fonction création matrice d'adjacence avec poids ##########################
-# ################################################################################
-
-matrice.fun <- function (arcs) {
-  ### Calculer la matrice d'adjacence avec poids, où le poids représente
-  # le nombre de fois que deux étudiants ont travaillé ensemble
-  adjPoids <- list2dist(arcs) %>% 
-    as.matrix %>% replace(is.na(.),0)
-  adjPoids %>% isSymmetric # La matrice est symétrique! 
-  return(adjPoids)
-}
-
-# ################################################################################
-# #### Fonction création df du cci pour chaque etudiants #########################
-# ################################################################################
-
-cci.fun <- function (matrice_adj) {
-  # Calculer le CCi pour tous les noeuds
-  cci <- clustcoeff(matrice_adj, weighted=TRUE) %$% CCi %>% 
-    data.frame(cci = .) %>% 
-    rownames_to_column("ID")
-  return(cci)
-}
-
-# ##############################################################################
-# #### Fonction création du df des noeuds (tous les étudiants) avec cci et #####
-# #### informations utilisées pour tester hypothèses et produire graphiques ####
-# ##############################################################################
-
-noeuds_tous.fun <- function (dbpath,df_cci) {
-  con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
-  # Création d'un df des étudiants (noeuds) et de leurs données utiles pour tester 
-  #les hypothèses et produire les figures
-  df_noeuds_tous <- dbGetQuery(con,"
-                         SELECT ID, formation_prealable, regime_coop, programme, annee_debut 
-                         FROM etudiants") 
-  df_noeuds_tous <- left_join(df_noeuds_tous,df_cci, by="ID") %>% # ajouter le CCi
-    
-    # Formater les variables pour des catégories pertinentes et des figures propres
-    mutate(annee = case_when(is.na(annee_debut) ~ "Inconnu",
-                             annee_debut == "A2020" ~ "A2020",
-                             TRUE ~ "Autre"),
-           prog = case_when(is.na(programme) ~ "Inconnu",
-                            TRUE ~ programme),
-           regime = case_when(regime_coop == "TRUE" ~ "COOP",
-                              regime_coop == "FALSE" ~ "Régulier",
-                              is.na(regime_coop) ~ "Inconnu"),
-           form = case_when(is.na(formation_prealable) ~ "Inconnu",
-                            TRUE ~ formation_prealable), .keep="unused") %>% 
-    mutate_if(is.character,as.factor) %>% ungroup
-  dbDisconnect(con) # Déconnexion de la db
-  return(df_noeuds_tous)
-}
-
-# ##############################################################################
-# #### Fonction sélection des noeuds de la classe du df des noeuds #############
-# ##############################################################################
-
-noeuds_classe.fun <- function (df_noeuds_tous) {
-  # Conserver seulement les étudiants ayant au moins une des quatre variables d'intérêt
-  df_noeuds_classe <- df_noeuds_tous %>% mutate_if(is.factor,as.character) %>% dplyr::filter(
-                    form!="Inconnu" |
-                    annee!="Inconnu" |
-                    regime!="Inconnu" |
-                    prog!="Inconnu")
-  return(df_noeuds_classe)
-}
-
-# ##############################################################################
-# #### Fonction création des statistiques descriptives du réseau ###############
-# ##############################################################################
-
-stats.fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) {
-  con<- dbConnect(SQLite(), dbname=dbpath) #Connexion avec la db
-  L <- arcsUniq %>% nrow # nombre d'intéractions au sein du réseau 
-  S <- dbGetQuery(con,"SELECT count(ID) FROM etudiants;") %>% as.vector() %>% as.numeric() # nombre d'étudiants
-  densite <- L/S # Moyenne d'interactions par etudiant (sous estimée)
-  m <-  S*(S-1)/2 # nombre d'interactions possibles dans un réseau unipartite simple non-dirigé
-  C0 <- L/m # environ 5.7 %; sous-estimée, car les interactions entre étudiants hors-cours ne sont pas toutes comptabilisées
-  
-  # On peut mieux l'estimer en utilisant seulement les étudiants du cours, car 
-  # théoriquement toutes les interactions 
-  L_core <- inner_join(x = arcs, y = df_noeuds_classe, 
-                        by = join_by(etudiant1 == ID)) %>% 
-                        dplyr::filter(etudiant2 %in% df_noeuds_classe$ID) %>% # Conserver uniquement interactions entre 2 étudiants du cours
-                        nrow
-  S_core <- df_noeuds_classe %>% nrow
-  densite_core <- L_core/S_core # Mieux estimée, car on calcule par étudiant ayant 
-  # des données complètes (ou presque)
-  
-  m_core <- S_core*(S_core-1)/2 # nombre d'interactions possibles dans un réseau des étudiants du cours unipartite simple non-dirigé
-  C0_core <- L_core/m_core 
-  # environ 43% des interactions potentielles réalisées entre les gens du cours!
-  
-  dbDisconnect(con) # Déconnexion de la db
-  df_stats <- data.frame(tous=c(L,S,densite,m,C0),noyau=c(L_core,S_core,densite_core,m_core,C0_core))
-  rownames(df_stats) <-c("Nombre d'interactions (L)","Nombre d'étudiants (S)","Densité du réseau (L/S)","Nombre d'interactions possibles au sein du réseau","Connectance du réseau")
-  return(df_stats)
-} 
-
-# ######################################################################################
-# #### Fonction création de l'object network utilisé pour le graphique du réseau #######
-# ######################################################################################
-
-network.fun <- function (arcsUniq,df_noeuds_classe) {
-  # Créer l'objet network à partir de arcsUniq
-  net = network(arcsUniq[,1:2] %>% as.matrix, 
-                directed = FALSE) 
-  
-  # Fonction génératrice de palettes de couleur
-  colfunc <- colorRampPalette(c("grey50", "black"))
-  str_vec <- arcsUniq$n %>% max %>% colfunc
-  
-  # Network ne travaille pas bien avec les facteurs, on retourne en charactères
-  df_noeuds_classe <- df_noeuds_classe %>% 
-    mutate_if(is.factor, as.character)
-  
-  # Ajouter la variable annee aux noeuds
-  net %v% "annee" = df_noeuds_classe %$% annee
-  
-  # Vecteur de poids pour gradient de couleur :
-  net %e% "colWeight" <- str_vec[arcsUniq$n]
-  
-  # vecteur de poids pour l'épaisseur des arcs:
-  net %e% "sizeWeight" <- (arcsUniq$n/(max(arcsUniq$n)))^0.6
-  
-  # vecteur de transparence pour rendre les noeuds "inconnus" plus transparents:
-  net %v% "aNA_start" <- df_noeuds_classe %>% 
-    mutate(n=case_when(annee=="Inconnu" ~ 0.4, TRUE ~ 1)) %$% n
-  
-  return(net)
-}
-
-# ##############################################################################
-# #### Fonction création des df de noeuds et d'arcs utilisés ###################
-# #### pour le graphique interactif avec VisNetwork ############################
-# ##############################################################################
-
-noeuds_arcs.fun <- function (df_noeuds_tous,arcs) {
-  # Créer un df des noeuds du réseau (étudiants)
-  vNodes <- data.frame(id=sort(df_noeuds_tous$ID), 
-                       label=sort(df_noeuds_tous$ID), 
-                       color = "#B3E2CD")
-  
-  # Créer un df des arcs du réseau
-  vEdges <- data.frame(from=arcs[,1], 
-                       to=arcs[,2], 
-                       value = (arcs[,3]/max(arcs[,3])^0.6), # Le nbr de collaborations pour chaque interaction (arc) a été
-                       color = "#FDCDAC")                    # normalisé avec un exposant de 0.6 choisi par essai-erreur pour que
-  return(list(vNodes,vEdges))                                # l'interval d'épaisseur des arcs soit visuellement clair dans le graphique
-}
-
-
-

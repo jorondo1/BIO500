@@ -1,10 +1,14 @@
 ### Importer tous les packages nécessaires
 library(pacman)
-p_load(Hmisc, targets, dplyr, RSQLite, magrittr, stringr, purrr, readr, rticles,
-       stringdist, tidyr, data.table, Hmisc,targets,visNetwork,tarchetypes,rmarkdown)
+p_load(data.table, dplyr, GGally,ggpubr, gridExtra, Hmisc, igraph, intergraph, 
+       knitr, magrittr, network, NetworkToolbox, patchwork, purrr, RColorBrewer, 
+       readr, rmarkdown, RSQLite, rstatix, rticles, sparsebnUtils, sna, spaa,
+       stringdist, stringr, tarchetypes, targets, tibble, tidygraph, tidyr, 
+       visNetwork, wordcountaddin)
 
 ### Scripts R
-source("scripts/travail_target.R")
+source("scripts/create_db.R")
+source("scripts/analyses.R")
 
 ### Pipeline
 list(

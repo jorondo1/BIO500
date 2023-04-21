@@ -21,11 +21,11 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, fig.cap = " ")
-library(pacman)
-p_load(tidygraph, igraph, dplyr, GGally, network, sna, intergraph, magrittr,
-       RColorBrewer, NetworkToolbox, sparsebnUtils, spaa, tibble, rstatix, ggpubr,
-       visNetwork,gridExtra,knitr, patchwork, wordcountaddin)
+#knitr::opts_chunk$set(echo = FALSE, fig.cap = " ")
+#library(pacman)
+#p_load(igraph, dplyr, GGally,ggpubr, gridExtra, intergraph, knitr, magrittr,
+#       patchwork, network, NetworkToolbox, RColorBrewer, rstatix, sparsebnUtils, 
+#       sna, spaa, tibble, tidygraph, visNetwork, wordcountaddin)
 ```
 
 

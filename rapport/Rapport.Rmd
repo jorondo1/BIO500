@@ -253,13 +253,13 @@ cciYr.plot <- df_noeuds_classe %>% filter(annee!="Inconnu") %>%
 
 <div class="col2">
 
-## Visualisation du réseau en fonction de l'année de début
+## Visualisation du réseau
 
 Il est possible d'observer de manière évidente que les étudiants ayant débutés leur parcours universitaire en 2020 forment plus souvent des regroupements collaboratifs entre eux qu'avec les autres cohortes. La figure 3 montre le poids des arcs, lequel correspond à un nombre plus élevé de collaborations entre deux personnes étudiantes (deux noeuds).
 
+</div>
 
-
-```{R "Visualisation du réseau en fonction de l'année de début", message=FALSE, warning=FALSE, echo=FALSE}
+```{R fig3, Boxplots, fig.cap="\\label{fig:fig3}Visualisation du réseau en fonction de l'année de début.",fig.height=6, message=FALSE, warning=FALSE, echo=FALSE}
 net <- tar_read(network)
 
 set.seed(20042023)
@@ -270,7 +270,22 @@ ggnet2(net, color="annee", palette='Set2',
                     size=5, node.alpha = "aNA_start")
 ```
 
+<hr>
+</br>
+<style>
+  .col2 {
+    columns: 2 200px;         /* number of columns and width in pixels*/
+    -webkit-columns: 2 200px; /* chrome, safari */
+    -moz-columns: 2 200px;    /* firefox */
+  }
+  .col3 {
+    columns: 3 100px;
+    -webkit-columns: 3 100px;
+    -moz-columns: 3 100px;
+  }
+</style>
 
+<div class="col2">
 
 # Discussion 
 

@@ -40,7 +40,6 @@ output:
 
 <div class="col2">
 
-
 # Introduction {#introduction}
 
 En écologie, le concept de réseau écologique fait principalement référence aux interactions entre les espèces d'un environnement particulier, ainsi qu'aux interactions des ces espèces avec cet environnement. Ces interactions sont, de manière naturelle, sélectionnées pour le maintient de l'équilibre des écosystèmes en favorisant leur fonctionnement [@bascompte_networks_2007].

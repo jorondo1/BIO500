@@ -29,10 +29,10 @@ lirecsv.fun <- function(path) {
 }
 
 # Fonction pour créer une liste de 3 listes comportant les fichiers de données de cours, de collaboration et d'étudiants
-readData.fun <- function () {
-  pathCours <- Sys.glob("data/*cours*csv") # Créer un vecteur comporant le nom de tous les fichiers de données de cours
-  pathCollab <- Sys.glob("data/*collaboration*csv") # Créer un vecteur comporant le nom de tous les fichiers de données de collaboration
-  pathEtudiant <- Sys.glob("data/*etudiant*csv") # Créer un vecteur comporant le nom de tous les fichiers de données d'étudiants
+readData.fun <- function (file_paths) {
+  pathCours <- grep("*cours*\\.csv",file_paths,value=TRUE) # Créer un vecteur comporant le nom de tous les fichiers de données de cours
+  pathCollab <- grep("*collaboration*\\.csv",file_paths,value=TRUE) # Créer un vecteur comporant le nom de tous les fichiers de données de collaboration
+  pathEtudiant <- grep("*etudiant*\\.csv",file_paths,value=TRUE) # Créer un vecteur comporant le nom de tous les fichiers de données d'étudiants
   list_data <- list() # Liste vide qui contiendra les 3 listes de data frames
   list_data[[1]] <- lirecsv.fun(pathCours)
   list_data[[2]] <- lirecsv.fun(pathCollab)

@@ -12,7 +12,9 @@ Pipeline créé dans le cadre du cours BIO500 pour analyser la structure du rés
 Spécifiquement, le code effectue les opérations suivantes en assurant la dépendance de chaque étape sur la sortie de l'étape précédente:
 
 1. Importer et nettoyer les données brutes
-2. Créer et injecter une base de donnée relationnelle
+2. Créer et injecter une base de données relationnelle
 3. Analyser les caractéristiques du réseau
 4. Produire les tables et figures pertinentes
 5. Produire un rapport formaté
+
+Le répertoire github du projet est disponible [ici] (https://github.com/jorondo1/BIO500). 

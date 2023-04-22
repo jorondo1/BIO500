@@ -13,8 +13,17 @@ source("scripts/analyses.R")
 ### Pipeline
 list(
   tar_target(
+    name = path, # Cible
+    command = "./data", # Dossier contenant les fichiers de données
+    format = "file" # Format de la cible
+  ),
+  tar_target(
+    name = file_paths, # Cible
+    command = list.files(path, full.names = TRUE) # Liste les fichiers dans le dossier
+  ),
+  tar_target(
     data, # Cible pour les données brutes
-    readData.fun()
+    readData.fun(file_paths)
   ),
   tar_target(
     clean_data, # Cible pour les données nettoyées
@@ -62,7 +71,7 @@ list(
   ),
   tar_render(
     rapport,
-    path="rapport/Rapport.Rmd",
+    path="rapport/Rapport.Rmd", # Le chemin du fichier .Rmd à render
     params = list(cssbib)
   )
 )

@@ -32,7 +32,7 @@ La structure du répertoire est la suivante :
 
 ## Exécution du programme
 À partir du répertoire principal, dans R, exécuter:
-´´´
+```
 source("_targets.R")
 tar_make()
-´´´
+```

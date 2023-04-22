@@ -1,63 +1,46 @@
 ---
-title: "Caractérisation d'un réseau de collaboration d'étudiants en biologie."
-
-author:
-  - name: "Amélie Harbeck-Bastien"
-    institute: udes
-  - name: "Samuel Fortin"
-    institute: udes
-  - name: "Jonathan Rondeau-Leclaire"
-    institute: udes
-institute:
-  - udes: "Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université, Sherbrooke, Québec, J1K 2R1"
+title: "Caractérisation d'un réseau de collaboration de personnes étudiantes en biologie."
 date: "22 avril 2023"
-abstract: "Le concept de réseaux écologiques a été décrit et étudié en profondeur dans la littérature [@delmas_analysing_2019]. Or, il serait intéressant d'évaluer si les propriétés d'un réseau de collaboration humain dans un contexte académique peut se comparer à celles des réseaux écologiques. Pour ce faire, le coefficient de regroupement d'étudiants au baccalauréat (BAC) en biologie a servi à déterminer si, dans un contexte de collaborations lors de travaux d'équipes, les étudiants avaient tendance à former des regroupements spécifiques de manière fréquente au cours de leur parcours universitaire. Il en résulte un phénomène de regroupement plus prononcé selon l'année de début du BAC, démontrant ainsi qu'il existe une facteur lié à l'année d'entrée à l'université qui semble augmenter la valeur adaptative des étudiants dans cet environnement relativement stressant et compétitif."
-abstract-title: "Résumé"
 keywords:
-  - "Réseau écologique"
+  - "Réseaux écologiques"
+author: "Amélie Harbeck-Bastien<sup>a</sup>, Samuel Fortin<sup>a</sup> et Jonathan Rondeau-Leclaire<sup>a</sup>"
 
-
+csl: nature.csl
 bibliography: bibliographie.bib
-output:
+    
+output: 
   bookdown::html_document2:
     number_sections: FALSE
-    css: "styles.css"
+    css: styles.css
+
+#NOTE : l'institut a été ajouté à l'extérieur du YAML car l'argument institut: n'est pas valide avec bookdown::html_document2, et son équivalent affiliation: ne fonctionne pas non plus.
 ---
 
-</br>
-<style>
-  .col2 {
-    columns: 2 200px;         /* number of columns and width in pixels*/
-    -webkit-columns: 2 200px; /* chrome, safari */
-    -moz-columns: 2 200px;    /* firefox */
-  }
-  .col3 {
-    columns: 3 100px;
-    -webkit-columns: 3 100px;
-    -moz-columns: 3 100px;
-  }
-</style>
+_<sup>a</sup>Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université, Sherbrooke, Québec, J1K 2R1_
 
-<div class="col2">
+## Résumé {.tabset}
 
-# Introduction {#introduction}
+Le concept de réseaux écologiques a été décrit et étudié en profondeur dans la littérature.[@delmas_analysing_2019] Or, il serait intéressant d'évaluer si les propriétés d'un réseau de collaboration humain dans un contexte académique peut se comparer à celles des réseaux écologiques. Pour ce faire, le coefficient de regroupement des personnes étudiantes au baccalauréat en biologie a servi à déterminer si, dans un contexte de collaborations lors de travaux d'équipes, les étudiants avaient tendance à former des regroupements spécifiques de manière fréquente au cours de leur parcours universitaire. Il en résulte un phénomène de regroupement plus prononcé selon l'année de début du BAC, démontrant ainsi qu'il existe une facteur lié à l'année d'entrée à l'université qui semble augmenter la valeur adaptative des étudiants dans cet environnement relativement stressant et compétitif.
 
-En écologie, le concept de réseau écologique fait principalement référence aux interactions entre les espèces d'un environnement particulier, ainsi qu'aux interactions des ces espèces avec cet environnement. Ces interactions sont, de manière naturelle, sélectionnées pour le maintient de l'équilibre des écosystèmes en favorisant leur fonctionnement [@bascompte_networks_2007].
+### Introduction
+
+En écologie, le concept de réseau écologique fait principalement référence aux interactions entre les espèces d'un environnement particulier, ainsi qu'aux interactions des ces espèces avec cet environnement. Ces interactions sont, de manière naturelle, sélectionnées pour le maintient de l'équilibre des écosystèmes en favorisant leur fonctionnement.[@bascompte_networks_2007]
 
 Dans une optique d'évaluer si ce concept naturel peut être appliqué aux humains, la présente expérience tente de mesurer si les interactions entre étudiants universitaires s'apparentent aux interactions retrouvées dans un réseau écologique naturel. 
 
 Ainsi, nous posons la question suivante : « Est-ce que des regroupements de personnes étudiantes (cliques) collaborant ensemble plus fréquemment qu'avec d'autres peuvent être identifiées dans le groupe du cours BIO500 ? ». Dans le cas d'une réponse affirmative, la question secondaire est la suivante : « Quelles caractéristiques propres à chaque étudiant mène à la formation de regroupements spécifiques? »
 
-La Figure \@ref(fig:reseau) permet de visualiser le réseau à l'étude de manière interactive, dans laquelle les collaborations entre des étudiants aux baccalauréats (BAC) en biologie sont représentées par des lignes et les étudiants par un point unique. Une ligne épaisse indique un nombre total de collaborations plus élevé qu'une ligne mince. Il s'avère toutefois ardu d'utiliser cette figure pour déceler quelconques regroupements. Les analyses présentées dans cette étude tentent ainsi de visualiser plus aisément les regroupements au sein d'un groupe d'étudiants universitaires. 
+#### Visualisation du réseau 
 
-</div>
+La Figure \@ref(fig:reseau) permet d'interagir avec le réseau à l'étude. Les collaborations sont représentées par des lignes (arcs) et les étudiants par un point unique (noeud). L'épaisseur de la ligne est proportionnel au nombre de collaborations rapportées entre chaque étudiant. Il s'avère toutefois ardu d'utiliser cette figure pour déceler quelconques regroupements. Les analyses présentées dans cette étude tentent ainsi de visualiser plus aisément les regroupements au sein d'un groupe d'étudiants universitaires. 
 
-```{r reseau, fig.cap="Réseau de collaboration entre les étudiants de la classe du cours BIO500 à l'Université de Sherbrooke à l'hiver 2023.", fig.width=9.5, fig.height=6, echo=FALSE}
+```{r reseau, fig.cap="Carte interactive du réseau de collaboration entre les étudiants de la classe du cours BIO500 à l'Université de Sherbrooke à l'hiver 2023. L'action de cliquer sur un noeud permet de mettre en valeur les noeuds partageant un arc avec celui-ci, ainsi que tous les arcs partagés entre ces noeuds.", fig.width=9.5, fig.height=6, echo=FALSE}
 noeuds_arcs <- tar_read(noeuds_arcs) # importer target pour fetch les df de noeuds et d'arcs utilisés par visNetwork
 #VisNetwork; en cliquant on peut voir le Cci
 
 visNetwork(nodes = noeuds_arcs[[1]], edges = noeuds_arcs[[2]]) %>% 
-  visIgraphLayout() %>% 
+  visIgraphLayout(randomSeed = 12345, 
+                  type="full") %>% 
   visOptions(
     highlightNearest = list(enabled = TRUE, # interactivité
                             hover = TRUE, # pas besoin de cliquer
@@ -68,82 +51,45 @@ visNetwork(nodes = noeuds_arcs[[1]], edges = noeuds_arcs[[2]]) %>%
              nodesIdSelection = TRUE)
 ```
 
-<hr>
-</br>
+### Méthodes 
 
-<style>
-  .col2 {
-    columns: 2 200px;         /* number of columns and width in pixels*/
-    -webkit-columns: 2 200px; /* chrome, safari */
-    -moz-columns: 2 200px;    /* firefox */
-  }
-  .col3 {
-    columns: 3 100px;
-    -webkit-columns: 3 100px;
-    -moz-columns: 3 100px;
-  }
-</style>
-
-<div class="col2">
-
-# Méthodes
-
-### Collecte de données 
+#### Collecte de données 
 
 Les données ont été récoltées par échantillonnage composite de 10 sous-groupes des personnes étudiantes participant au cours _Méthodes en écologie computationnelle - BIO500_, dans le cadre de leur baccalauréat en biologie, pour un total de 39 étudiants. Chaque interaction, soit chaque fois que deux étudiants ont travaillé en équipe lors d'un projet au cours de leur parcours universitaire, a été compilée en fonction du cours concerné. Les interactions avec des étudiants en dehors du cours BIO500 sont également présentes dans les données afin d'obtenir le nombre réel d'interaction des étudiants en BIO500. Cependant, les interactions entre personnes étudiantes de l'extérieur du cours ont seulement été compilées dans la mesure où elles ont eu elles ont eu lieu dans le cadre d'un travail d'équipe impliquant au moins une personne du cours BIO500. 
 
 Afin d'établir des possibles relations entre les membres du cours, la région administrive de provenance de l'étudiant, sa participation ou non au régime coop, sa formation prélable (universitaire, préuniversitaire, ou technique), son semestre de début au baccalauréat (e.g., A2022) et son sous-programme de biologie ont été compilés pour chaque personne étudiante de BIO500.      
 
-### Nettoyage des données 
+#### Nettoyage des données 
 
 Les données brutes des 10 sous-groupes du cours ont par la suite dûes être nettoyées et homogénéisées afin d'éviter tous biais dans les analyses subséquentes. Les doublons not été retirés, les fautes d'ortographes, données manquantes ou erronnées corrigées, ainsi que certains caractères spéciaux manuellement corrigés.
 
 Le nettoyage des données a été réalisé dans R à l'aide de RStudio.  [@rstudio_rstudio_2023] Les figures ont été produites à l'aide des librairies network, visNetwork, igraph, kable, ggplot2 et NetworkToolbox.
 
 
-### Sélection du noyau de la classe
+#### Sélection du noyau de la classe
 Ayant comme objectif d'identifier les principaux regroupements au sein cours, il a été décider de cibler l'analyse des données uniquement sur les étudiants de BIO500. Pour ce faire, les interactions avec les étudiants externes ont été enlevées pour ne conserver que les données du « noyau » de la classe, surnommé _core_ dans nos codes de programmation.
 
-### Analyses statistiques
+#### Analyses statistiques
 
 En premier lieu, les données ont été séparées selon les caractéristiques distinguant chaque individu, soit la participation au régime COOP ou régulier, la formation préalable ou l'année de début du BAC. Les autres caractéristiques n'ont pas été analysées, car le sous-programme de biologie possédait une trop faible variance des données, tandisque trop peu d'étudiants provenaient de régions similaires pour effectuer des tests statistiques intéressants selon ce critère. 
 
 La normalité de la distribution des coefficients de regroupement individuel (CCi), soit le nombre d'interactions entre personnes étudiantes ayant collaboré avec une même personne étudiante commune, a été testée via un test de Shapiro-Wilk pour les personnes étudiantes du cours BIO500. Un test de Dunn a ensuite été réalisé afin d'identifier les caractéristique particulières du parcours permettant de regrouper les personnes étudiantes par une distribution du CCi significativement différente. Ce test permet donc d'identifier des _cliques_ et la caractéristique de leur parcours qui les unit. Il est à noter que lors du test de Dunn en fonction de l'année de début, l'année 2020 a été comparée à un regroupement des données de toutes les autres années, car ces dernières possédaient trop peu de représentants pour être comparées avec une puissance statistique suffisamment élevée.
 
-# Résultats
+### Résultats
 
-Les caractéristiques du réseau mesurées sont rapportées dans le Tableau \@ref(tab:info). 
+Les caractéristiques du réseau mesurées sont rapportées dans la Table \@ref(tab:info). 
 
-</div>
-
-```{R info, tab.cap="Caractéristiques générales du réseau global et du sous-réseau du noyau des étudiants de la classe.", echo=FALSE}
+```{R info, echo=FALSE}
   df_stats <- tar_read(df_stats)
 knitr::kable(x = df_stats,
       format="html",
-      digits = 2,
+      digits = 1,
       align = "c",
       col.names = c("Tous les étudiants","Noyau de la classe"), 
-      caption = "Informations générales du réseau global et du sous-réseau du noyau des étudiants de la classe",
-      table.attr = "style='width:100%;'")
+      caption = "Caractéristiques générales du réseau global et du sous-réseau du noyau des étudiants de la classe.",
+      table.attr = "style='width:100%;'") %>% 
+  kable_material(full_width = FALSE, position = "left")
 ```
-
-<hr>
-</br>
-
-<style>
-  .col2 {
-    columns: 2 200px;         /* number of columns and width in pixels*/
-    -webkit-columns: 2 200px; /* chrome, safari */
-    -moz-columns: 2 200px;    /* firefox */
-  }
-  .col3 {
-    columns: 3 100px;
-    -webkit-columns: 3 100px;
-    -moz-columns: 3 100px;
-  }
-</style>
-
-<div class="col2">
 
 On remarque une connectance du réseau bien plus importante en ne considérant que le noyau de la classe, soit les étudiants possédant minimalement une information de compilée entre le régime, la formation préuniversitaire, l'année de début ou le programme d'étude. Ce résultat appuie le fait d'utiliser uniquement les données de ces étudiants dans les prochaines analyses, puisqu'il souligne qu'il nous manque beaucoup d'information concernant les étudiants de l'extérieur du noyau. 
 
@@ -188,8 +134,6 @@ reg.stat <- df_noeuds_classe %>%
 ```
 
 Un test de Dunn souligne que la seule caractéristique du parcours permettant de créer des groupes dont le coefficient de regroupement est significativement différent est l'année de début du BAC (_p = 0.0104_) Figure \@ref(fig:boxplots). Ainsi, les personnes étudiantes ayant débuté à l'automne 2020 auraient un coefficient de regroupement significativement différent des étudiants n'ayant pas commencé à l'automne 2020. La figure 1 montre la distribution des coefficients de regroupement pour chaque groupe et le test statistique associé à chaque comparaison (ns: non-significatif, *: p<0.05).
-
-</div>
 
 ```{R boxplots, fig.cap="Comparaison de la distribution des coefficients de regroupements individuels par caractéristique du parcours des personnes étudiantes.", fig.width=9, fig.height=9, message=FALSE, warning=FALSE, echo=FALSE}
 
@@ -236,72 +180,29 @@ cciYr.plot <- df_noeuds_classe %>% filter(annee!="Inconnu") %>%
 
 ```
 
-<hr>
-</br>
-<style>
-  .col2 {
-    columns: 2 200px;         /* number of columns and width in pixels*/
-    -webkit-columns: 2 200px; /* chrome, safari */
-    -moz-columns: 2 200px;    /* firefox */
-  }
-  .col3 {
-    columns: 3 100px;
-    -webkit-columns: 3 100px;
-    -moz-columns: 3 100px;
-  }
-</style>
-
-<div class="col2">
-
-## Visualisation du réseau
+#### Visualisation du réseau
 
 Il est possible d'observer de manière évidente que les étudiants ayant débutés leur parcours universitaire en 2020 forment plus souvent des regroupements collaboratifs entre eux qu'avec les autres cohortes. La figure \@ref(fig:reseauannee) montre le poids des arcs, lequel correspond à un nombre plus élevé de collaborations entre deux personnes étudiantes (deux noeuds).
 
-</div>
-
-```{R reseauannee, fig.cap="Visualisation du réseau en fonction de l'année de début.", message=FALSE, warning=FALSE, echo=FALSE}
+```{R reseauannee, fig.cap="Visualisation du réseau en fonction de l'année de début de parcours.", message=FALSE, warning=FALSE, echo=FALSE}
 net <- tar_read(network)
 
 set.seed(20042023)
 
-ggnet2(net, color="annee", palette='Set2', 
-                    edge.color="colWeight", 
-                    edge.size = "sizeWeight",
-                    size=5, node.alpha = "aNA_start")
+ggnet2(net, color="annee", 
+       palette='Set2',
+       edge.color="colWeight",
+       edge.size = "sizeWeight",
+       size=4, 
+       mode="fruchtermanreingold",
+       node.alpha = "aNA_start",
+       layout.par = )
 ```
 
-<hr>
-</br>
-<style>
-  .col2 {
-    columns: 2 200px;         /* number of columns and width in pixels*/
-    -webkit-columns: 2 200px; /* chrome, safari */
-    -moz-columns: 2 200px;    /* firefox */
-  }
-  .col3 {
-    columns: 3 100px;
-    -webkit-columns: 3 100px;
-    -moz-columns: 3 100px;
-  }
-</style>
-
-<div class="col2">
-
-# Discussion 
+### Discussion
 
 En somme, pour répondre aux questions motivant l'étude, il y a en effet un phénomène de regroupement d'étudiants collaborants plus fréquemment comparativement à d'autres. Cet effet de « clique » semble être principalement expliqué par la session de début du parcours universitaire des personnes étudiantes. Il est d'ailleurs intéressant de remarquer que la figure \@ref(fig:reseauannee), contrôlée par l'année de début, permet une visualisation plus aisée et évidente de ce phénomène qu'avec la figure \@ref(fig:reseau).
 
 Il est possible de transposer ce phénomène en milieu naturel. Par exemple, le bouquetin des Alpes (*Alpine ibex*) est reconnu pour créer des associations préférentiellement en fonction de l'âge des individus de la population. Cela favoriserait leur valeur adaptative et diminuerait leurs confrontations avec les adultes de la population [@brambilla_long_2022]. Or, en prenant pour acquis que la majorité des étudiants du cours BIO500 ont un parcours préuniversitaire similaire, il est fort probable que les étudiants ayant débuté en 2020 soient du même âge. Ces affiliations selon l'âge sont logiques biologiquement, car ces individus vivent des obstacles similaires, ont des changements d'hormones semblables et sont intimidés par les étudiants plus âgés, un peu comme un jeune bouquetin vis-à-vis des mâles dominants. 
 
-
-# Limites de l'étude
-La méthode d'analyse de cette étude possède néanmoins des limitations. Les données ont été auto-rapportées par les personnes étudiantes et contenaient beaucoup d'erreurs qui ont dûes être corrigées manuellement, ne garantissant ainsi pas l'intégrité des données. De plus, le noyau des étudiants ne représente pas nécéssairement que les étudiants du cours, car les régles encadrant la façon de récolter les données n'étaient pas sans ambiguité.
-
-```{r, message = FALSE, eval=FALSE, echo=FALSE}
-
-wordcountaddin::word_count("rapport/Rapport_Final.Rmd") %>% print
-```
-
-</div>
-
-# Bibliographie
+## Bibliographie

@@ -137,8 +137,21 @@ stats.fun <- function(dbpath,arcs,arcsUniq,df_noeuds_classe,df_cci,matrice_adj) 
   # environ 43% des interactions potentielles réalisées entre les gens du cours!
   
   dbDisconnect(con) # Déconnexion de la db
-  df_stats <- data.frame(tous=c(L,S,densite,m,C0),noyau=c(L_core,S_core,densite_core,m_core,C0_core))
-  rownames(df_stats) <-c("Nombre d'interactions (L)","Nombre d'étudiants (S)","Densité du réseau (L/S)","Nombre d'interactions possibles au sein du réseau","Connectance du réseau")
+  df_stats <- data.frame(tous=c(L,
+                                S,
+                                densite,
+                                m,
+                                C0*100),
+                         noyau=c(L_core,
+                                 S_core,
+                                 densite_core,
+                                 m_core,
+                                 C0_core*100))
+  rownames(df_stats) <-c("Nombre d'interactions (L)",
+                         "Nombre d'étudiants (S)",
+                         "Densité du réseau (L/S)",
+                         "Nombre d'interactions possibles au sein du réseau",
+                         "Connectance du réseau (%)")
   return(df_stats)
 } 
 

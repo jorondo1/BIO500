@@ -1,10 +1,11 @@
-### Importer tous les packages nécessaires
-library(pacman)
-p_load(bookdown,data.table, dplyr, GGally,ggpubr, gridExtra, Hmisc, igraph, intergraph, 
-       knitr, magrittr, network, NetworkToolbox, patchwork, purrr, RColorBrewer, 
-       readr, rmarkdown, RSQLite, rstatix, rticles, sparsebnUtils, sna, spaa,
-       stringdist, stringr, tarchetypes, targets, tibble, tidygraph, tidyr, 
-       visNetwork, wordcountaddin)
+library(targets)
+library(tarchetypes)
+tar_option_set(packages = c(
+  "bookdown", "data.table", "dplyr", "GGally", "ggpubr", "gridExtra", "Hmisc", "igraph", "intergraph", 
+  "knitr", "kableExtra", "magrittr", "network", "NetworkToolbox", "patchwork", "purrr", "RColorBrewer", 
+  "readr", "rmarkdown", "RSQLite", "rstatix", "rticles", "sparsebnUtils", "sna", "spaa",
+  "stringdist", "stringr", "tarchetypes", "targets", "tibble", "tidygraph", "tidyr",
+       "visNetwork"))
 
 ### Scripts R
 source("scripts/create_db.R")

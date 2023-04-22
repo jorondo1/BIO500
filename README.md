@@ -17,4 +17,4 @@ Spécifiquement, le code effectue les opérations suivantes en assurant la dépe
 4. Produire les tables et figures pertinentes
 5. Produire un rapport formaté
 
-Le répertoire github du projet est disponible [ici] (https://github.com/jorondo1/BIO500). 
+Le répertoire github du projet est disponible [ici](https://github.com/jorondo1/BIO500). 

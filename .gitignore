@@ -7,3 +7,4 @@ db/*.db
 essai.*
 *.Rproj
 _targets/*
+_targets/objects/*

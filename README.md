@@ -18,3 +18,13 @@ Spécifiquement, le code effectue les opérations suivantes en assurant la dépe
 5. Produire un rapport formaté
 
 Le répertoire github du projet est disponible [ici](https://github.com/jorondo1/BIO500). 
+
+La structure du répertoire est la suivante : 
+- Dossier _targets : contient les objects targets
+- Dossier data : contient les données brutes en csv
+- Dossier db : contient le fichier de la base de donnée créée à partie des données brutes
+- Dossier rapport : contient le fichier .Rmd du rapport, le fichier de bibliographie .bib et le fichier .css pour le style du fichier .Rmd
+- Dossier scripts : contient le fichier create_db.R comportant les fonctions pour les étapes 1 et 2 ainsi que le fichier analyses.R comportant les fonctions pour l'étape 3 et une partie de l'étape 4. 
+- Fichier .gitignore
+- Fichier _targets.R : contient le pipeline orchestrant l'exécution de toutes ces étapes
+- Fichier README.md

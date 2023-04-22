@@ -8,3 +8,4 @@ essai.*
 *.Rproj
 _targets/*
 _targets/objects/*
+checklist/*

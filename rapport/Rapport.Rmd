@@ -1,47 +1,44 @@
 ---
 title: "Caractérisation d'un réseau de collaboration d'étudiants en biologie."
-
-author:
-  - name: "Amélie Harbeck-Bastien"
-    institute: udes
-  - name: "Samuel Fortin"
-    institute: udes
-  - name: "Jonathan Rondeau-Leclaire"
-    institute: udes
-institute:
-  - udes: "Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université, Sherbrooke, Québec, J1K 2R1"
 date: "22 avril 2023"
-#abstract_title: "Résumé"
 keywords:
-  - "Réseau écologique"
+  - "Réseaux écologiques"
+author: "Amélie Harbeck-Bastien<sup>a</sup>, Samuel Fortin<sup>a</sup> et Jonathan Rondeau-Leclaire<sup>a</sup>"
 csl: nature.csl
-
 
 bibliography: bibliographie.bib
 output: 
   bookdown::html_document2:
     number_sections: FALSE
     css: "styles.css"
+    
+#NOTE : l'institut a été ajouté à l'extérieur du YAML car l'argument institut: n'est pas valide avec bookdown::html_document2, et son équivalent affiliation: ne fonctionne pas non plus.
 ---
+
+_<sup>a</sup>Université de Sherbrooke, Département de biologie, 2500, Boulevard de l'Université, Sherbrooke, Québec, J1K 2R1_
+
 ## Résumé {.tabset}
-Le concept de réseaux écologiques a été décrit et étudié en profondeur dans la littérature [@delmas_analysing_2019]. Or, il serait intéressant d'évaluer si les propriétés d'un réseau de collaboration humain dans un contexte académique peut se comparer à celles des réseaux écologiques. Pour ce faire, le coefficient de regroupement d'étudiants au baccalauréat (BAC) en biologie a servi à déterminer si, dans un contexte de collaborations lors de travaux d'équipes, les étudiants avaient tendance à former des regroupements spécifiques de manière fréquente au cours de leur parcours universitaire. Il en résulte un phénomène de regroupement plus prononcé selon l'année de début du BAC, démontrant ainsi qu'il existe une facteur lié à l'année d'entrée à l'université qui semble augmenter la valeur adaptative des étudiants dans cet environnement relativement stressant et compétitif.
+
+Le concept de réseaux écologiques a été décrit et étudié en profondeur dans la littérature.[@delmas_analysing_2019] Or, il serait intéressant d'évaluer si les propriétés d'un réseau de collaboration humain dans un contexte académique peut se comparer à celles des réseaux écologiques. Pour ce faire, le coefficient de regroupement d'étudiants au baccalauréat (BAC) en biologie a servi à déterminer si, dans un contexte de collaborations lors de travaux d'équipes, les étudiants avaient tendance à former des regroupements spécifiques de manière fréquente au cours de leur parcours universitaire. Il en résulte un phénomène de regroupement plus prononcé selon l'année de début du BAC, démontrant ainsi qu'il existe une facteur lié à l'année d'entrée à l'université qui semble augmenter la valeur adaptative des étudiants dans cet environnement relativement stressant et compétitif.
 
 ### Introduction
 
-En écologie, le concept de réseau écologique fait principalement référence aux interactions entre les espèces d'un environnement particulier, ainsi qu'aux interactions des ces espèces avec cet environnement. Ces interactions sont, de manière naturelle, sélectionnées pour le maintient de l'équilibre des écosystèmes en favorisant leur fonctionnement [@bascompte_networks_2007].
+En écologie, le concept de réseau écologique fait principalement référence aux interactions entre les espèces d'un environnement particulier, ainsi qu'aux interactions des ces espèces avec cet environnement. Ces interactions sont, de manière naturelle, sélectionnées pour le maintient de l'équilibre des écosystèmes en favorisant leur fonctionnement.[@bascompte_networks_2007]
 
 Dans une optique d'évaluer si ce concept naturel peut être appliqué aux humains, la présente expérience tente de mesurer si les interactions entre étudiants universitaires s'apparentent aux interactions retrouvées dans un réseau écologique naturel. 
 
 Ainsi, nous posons la question suivante : « Est-ce que des regroupements de personnes étudiantes (cliques) collaborant ensemble plus fréquemment qu'avec d'autres peuvent être identifiées dans le groupe du cours BIO500 ? ». Dans le cas d'une réponse affirmative, la question secondaire est la suivante : « Quelles caractéristiques propres à chaque étudiant mène à la formation de regroupements spécifiques? »
 
-La Figure \@ref(fig:reseau) permet de visualiser le réseau à l'étude de manière interactive, dans laquelle les collaborations entre des étudiants aux baccalauréats (BAC) en biologie sont représentées par des lignes et les étudiants par un point unique. Une ligne épaisse indique un nombre total de collaborations plus élevé qu'une ligne mince. Il s'avère toutefois ardu d'utiliser cette figure pour déceler quelconques regroupements. Les analyses présentées dans cette étude tentent ainsi de visualiser plus aisément les regroupements au sein d'un groupe d'étudiants universitaires. 
+#### Visualisation du réseau 
 
-```{r reseau, fig.cap="Réseau de collaboration entre les étudiants de la classe du cours BIO500 à l'Université de Sherbrooke à l'hiver 2023.", fig.width=9.5, fig.height=6, echo=FALSE}
+La Figure \@ref(fig:reseau) permet d'interagir avec le réseau à l'étude. Les collaborations sont représentées par des lignes (arcs) et les étudiants par un point unique (noeud). L'épaisseur de la ligne est proportionnel au nombre de collaborations rapportées entre chaque étudiant. Il s'avère toutefois ardu d'utiliser cette figure pour déceler quelconques regroupements. Les analyses présentées dans cette étude tentent ainsi de visualiser plus aisément les regroupements au sein d'un groupe d'étudiants universitaires. 
+
+```{r reseau, fig.cap="Carte interactive du réseau de collaboration entre les étudiants de la classe du cours BIO500 à l'Université de Sherbrooke à l'hiver 2023. L'action de cliquer sur un noeud permet de mettre en valeur les noeuds partageant un arc avec celui-ci, ainsi que tous les arcs partagés entre ces noeuds.", fig.width=9.5, fig.height=6, echo=FALSE}
 noeuds_arcs <- tar_read(noeuds_arcs) # importer target pour fetch les df de noeuds et d'arcs utilisés par visNetwork
 #VisNetwork; en cliquant on peut voir le Cci
 
 visNetwork(nodes = noeuds_arcs[[1]], edges = noeuds_arcs[[2]]) %>% 
-  visIgraphLayout() %>% 
+  visIgraphLayout(randomSeed = 12345, type="full") %>% 
   visOptions(
     highlightNearest = list(enabled = TRUE, # interactivité
                             hover = TRUE, # pas besoin de cliquer
@@ -200,13 +197,5 @@ ggnet2(net, color="annee", palette='Set2',
 En somme, pour répondre aux questions motivant l'étude, il y a en effet un phénomène de regroupement d'étudiants collaborants plus fréquemment comparativement à d'autres. Cet effet de « clique » semble être principalement expliqué par la session de début du parcours universitaire des personnes étudiantes. Il est d'ailleurs intéressant de remarquer que la figure \@ref(fig:reseauannee), contrôlée par l'année de début, permet une visualisation plus aisée et évidente de ce phénomène qu'avec la figure \@ref(fig:reseau).
 
 Il est possible de transposer ce phénomène en milieu naturel. Par exemple, le bouquetin des Alpes (*Alpine ibex*) est reconnu pour créer des associations préférentiellement en fonction de l'âge des individus de la population. Cela favoriserait leur valeur adaptative et diminuerait leurs confrontations avec les adultes de la population [@brambilla_long_2022]. Or, en prenant pour acquis que la majorité des étudiants du cours BIO500 ont un parcours préuniversitaire similaire, il est fort probable que les étudiants ayant débuté en 2020 soient du même âge. Ces affiliations selon l'âge sont logiques biologiquement, car ces individus vivent des obstacles similaires, ont des changements d'hormones semblables et sont intimidés par les étudiants plus âgés, un peu comme un jeune bouquetin vis-à-vis des mâles dominants. 
-
-#### Limites de l'étude
-La méthode d'analyse de cette étude possède néanmoins des limitations. Les données ont été auto-rapportées par les personnes étudiantes et contenaient beaucoup d'erreurs qui ont dûes être corrigées manuellement, ne garantissant ainsi pas l'intégrité des données. De plus, le noyau des étudiants ne représente pas nécéssairement que les étudiants du cours, car les régles encadrant la façon de récolter les données n'étaient pas sans ambiguité.
-
-```{r, message = FALSE, eval=FALSE, echo=FALSE}
-
-wordcountaddin::word_count("rapport/Rapport_Final.Rmd") %>% print
-```
 
 ## Bibliographie

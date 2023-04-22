@@ -193,3 +193,5 @@ noeuds_arcs.fun <- function (df_noeuds_tous,arcs) {
                        color = "#FDCDAC")                    # normalisé avec un exposant de 0.6 choisi par essai-erreur pour que
   return(list(vNodes,vEdges))                                # l'interval d'épaisseur des arcs soit visuellement clair dans le graphique
 }
+
+

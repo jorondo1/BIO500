@@ -1,6 +1,6 @@
 ### Importer tous les packages nécessaires
 library(pacman)
-p_load(data.table, dplyr, GGally,ggpubr, gridExtra, Hmisc, igraph, intergraph, 
+p_load(bookdown,data.table, dplyr, GGally,ggpubr, gridExtra, Hmisc, igraph, intergraph, 
        knitr, magrittr, network, NetworkToolbox, patchwork, purrr, RColorBrewer, 
        readr, rmarkdown, RSQLite, rstatix, rticles, sparsebnUtils, sna, spaa,
        stringdist, stringr, tarchetypes, targets, tibble, tidygraph, tidyr, 
@@ -56,8 +56,13 @@ list(
     noeuds_arcs, # Cible pour les df de noeuds et d'arcs utilisés par la fonction VisNetwork
     noeuds_arcs.fun(df_noeuds_tous=df_noeuds_tous,arcs=collab_poids[[1]])
   ),
+  tar_files_input(
+    cssbib, # 09. Cible pour assurer le roulement de tar_render lorsque les fichiers .css ou .bib sont modifiés
+    c("rapport/styles.css","rapport/bibliographie.bib"),
+  ),
   tar_render(
     rapport,
-    path="rapport/Rapport.Rmd"
+    path="rapport/Rapport.Rmd",
+    params = list(cssbib)
   )
 )

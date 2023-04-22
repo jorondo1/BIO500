@@ -4,7 +4,7 @@ p_load(bookdown,data.table, dplyr, GGally,ggpubr, gridExtra, Hmisc, igraph, inte
        knitr, magrittr, network, NetworkToolbox, patchwork, purrr, RColorBrewer, 
        readr, rmarkdown, RSQLite, rstatix, rticles, sparsebnUtils, sna, spaa,
        stringdist, stringr, tarchetypes, targets, tibble, tidygraph, tidyr, 
-       visNetwork, wordcountaddin)
+       visNetwork)
 
 ### Scripts R
 source("scripts/create_db.R")

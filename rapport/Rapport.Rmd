@@ -39,7 +39,8 @@ noeuds_arcs <- tar_read(noeuds_arcs) # importer target pour fetch les df de noeu
 #VisNetwork; en cliquant on peut voir le Cci
 
 visNetwork(nodes = noeuds_arcs[[1]], edges = noeuds_arcs[[2]]) %>% 
-  visIgraphLayout(randomSeed = 12345, type="full") %>% 
+  visIgraphLayout(randomSeed = 12345, 
+                  type="full") %>% 
   visOptions(
     highlightNearest = list(enabled = TRUE, # interactivité
                             hover = TRUE, # pas besoin de cliquer

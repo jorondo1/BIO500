@@ -1,7 +1,10 @@
-### Importer tous les packages nécessaires
-library(pacman)
-p_load(bookdown,data.table, dplyr, GGally,ggpubr, gridExtra, Hmisc, igraph, intergraph, 
-       knitr, magrittr, network, NetworkToolbox, patchwork, purrr, RColorBrewer, 
+### Charger tous les packages nécessaires
+if (!requireNamespace("pacman", quietly = TRUE)) {
+  devtools::install_cran("pacman", dependencies = TRUE)  
+}
+library(pacman) # permet d'installer ET de charger des packages en une seule commande
+p_load(bookdown, data.table, dplyr, GGally,ggpubr, gridExtra, Hmisc, igraph, intergraph, 
+       knitr, kableExtra, magrittr, network, NetworkToolbox, patchwork, purrr, RColorBrewer, 
        readr, rmarkdown, RSQLite, rstatix, rticles, sparsebnUtils, sna, spaa,
        stringdist, stringr, tarchetypes, targets, tibble, tidygraph, tidyr, 
        visNetwork)

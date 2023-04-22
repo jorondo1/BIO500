@@ -1,17 +1,18 @@
 ---
-title: "Caractérisation d'un réseau de collaboration d'étudiants en biologie."
+title: "Caractérisation d'un réseau de collaboration de personnes étudiantes en biologie."
 date: "22 avril 2023"
 keywords:
   - "Réseaux écologiques"
 author: "Amélie Harbeck-Bastien<sup>a</sup>, Samuel Fortin<sup>a</sup> et Jonathan Rondeau-Leclaire<sup>a</sup>"
-csl: nature.csl
 
+csl: nature.csl
 bibliography: bibliographie.bib
+    
 output: 
   bookdown::html_document2:
     number_sections: FALSE
-    css: "styles.css"
-    
+    css: styles.css
+
 #NOTE : l'institut a été ajouté à l'extérieur du YAML car l'argument institut: n'est pas valide avec bookdown::html_document2, et son équivalent affiliation: ne fonctionne pas non plus.
 ---
 
@@ -19,7 +20,7 @@ _<sup>a</sup>Université de Sherbrooke, Département de biologie, 2500, Boulevar
 
 ## Résumé {.tabset}
 
-Le concept de réseaux écologiques a été décrit et étudié en profondeur dans la littérature.[@delmas_analysing_2019] Or, il serait intéressant d'évaluer si les propriétés d'un réseau de collaboration humain dans un contexte académique peut se comparer à celles des réseaux écologiques. Pour ce faire, le coefficient de regroupement d'étudiants au baccalauréat (BAC) en biologie a servi à déterminer si, dans un contexte de collaborations lors de travaux d'équipes, les étudiants avaient tendance à former des regroupements spécifiques de manière fréquente au cours de leur parcours universitaire. Il en résulte un phénomène de regroupement plus prononcé selon l'année de début du BAC, démontrant ainsi qu'il existe une facteur lié à l'année d'entrée à l'université qui semble augmenter la valeur adaptative des étudiants dans cet environnement relativement stressant et compétitif.
+Le concept de réseaux écologiques a été décrit et étudié en profondeur dans la littérature.[@delmas_analysing_2019] Or, il serait intéressant d'évaluer si les propriétés d'un réseau de collaboration humain dans un contexte académique peut se comparer à celles des réseaux écologiques. Pour ce faire, le coefficient de regroupement des personnes étudiantes au baccalauréat en biologie a servi à déterminer si, dans un contexte de collaborations lors de travaux d'équipes, les étudiants avaient tendance à former des regroupements spécifiques de manière fréquente au cours de leur parcours universitaire. Il en résulte un phénomène de regroupement plus prononcé selon l'année de début du BAC, démontrant ainsi qu'il existe une facteur lié à l'année d'entrée à l'université qui semble augmenter la valeur adaptative des étudiants dans cet environnement relativement stressant et compétitif.
 
 ### Introduction
 
@@ -75,17 +76,18 @@ La normalité de la distribution des coefficients de regroupement individuel (CC
 
 ### Résultats
 
-Les caractéristiques du réseau mesurées sont rapportées dans le Tableau \@ref(tab:info). 
+Les caractéristiques du réseau mesurées sont rapportées dans la Table \@ref(tab:info). 
 
-```{R info, tab.cap="Caractéristiques générales du réseau global et du sous-réseau du noyau des étudiants de la classe.", echo=FALSE}
+```{R info, echo=FALSE}
   df_stats <- tar_read(df_stats)
 knitr::kable(x = df_stats,
       format="html",
-      digits = 2,
+      digits = 1,
       align = "c",
       col.names = c("Tous les étudiants","Noyau de la classe"), 
-      caption = "Informations générales du réseau global et du sous-réseau du noyau des étudiants de la classe",
-      table.attr = "style='width:100%;'")
+      caption = "Caractéristiques générales du réseau global et du sous-réseau du noyau des étudiants de la classe.",
+      table.attr = "style='width:100%;'") %>% 
+  kable_material(full_width = FALSE, position = "left")
 ```
 
 On remarque une connectance du réseau bien plus importante en ne considérant que le noyau de la classe, soit les étudiants possédant minimalement une information de compilée entre le régime, la formation préuniversitaire, l'année de début ou le programme d'étude. Ce résultat appuie le fait d'utiliser uniquement les données de ces étudiants dans les prochaines analyses, puisqu'il souligne qu'il nous manque beaucoup d'information concernant les étudiants de l'extérieur du noyau. 
@@ -181,15 +183,19 @@ cciYr.plot <- df_noeuds_classe %>% filter(annee!="Inconnu") %>%
 
 Il est possible d'observer de manière évidente que les étudiants ayant débutés leur parcours universitaire en 2020 forment plus souvent des regroupements collaboratifs entre eux qu'avec les autres cohortes. La figure \@ref(fig:reseauannee) montre le poids des arcs, lequel correspond à un nombre plus élevé de collaborations entre deux personnes étudiantes (deux noeuds).
 
-```{R reseauannee, fig.cap="Visualisation du réseau en fonction de l'année de début.", message=FALSE, warning=FALSE, echo=FALSE}
+```{R reseauannee, fig.cap="Visualisation du réseau en fonction de l'année de début de parcours.", message=FALSE, warning=FALSE, echo=FALSE}
 net <- tar_read(network)
 
 set.seed(20042023)
 
-ggnet2(net, color="annee", palette='Set2', 
-                    edge.color="colWeight", 
-                    edge.size = "sizeWeight",
-                    size=5, node.alpha = "aNA_start")
+ggnet2(net, color="annee", 
+       palette='Set2',
+       edge.color="colWeight",
+       edge.size = "sizeWeight",
+       size=4, 
+       mode="fruchtermanreingold",
+       node.alpha = "aNA_start",
+       layout.par = )
 ```
 
 ### Discussion
